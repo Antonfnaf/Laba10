@@ -46,7 +46,7 @@ int main()
     PrintAllColors();
     Test1::StartTest(10000);
     PrintAllColors();
-
+	//std::cout << "\033[48;2;23;34;123mD";
     //Field* field = new Field(222, 222, 4, 7);*/
     ////field->Print();
     //std::cout << '\u256C\n';

@@ -8,34 +8,43 @@
 
 #include "UIEngine/input/InputManager.h"
 
+
+
+
+
+
+
+
+
 class TestWindow1 : public IWindow {
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const override {
 		std::vector<std::vector<Pixel>> pic;
-		for (int i = 0; i < height; i++)
-		{
-			pic.push_back(std::vector<Pixel>());
-			for (int j = 0; j < width; j++)
-			{
-				int a = j % 4;
-				switch (a) {
-				case 0:
-					pic[i].push_back(Pixel("\u2660", Color::Black, Color::Yellow));
-					break;
-				case 1:
-					pic[i].push_back(Pixel("\u2665", Color::Red, Color::Yellow));
-					break;
-				case 2:
-					pic[i].push_back(Pixel("\u2666", Color::Red, Color::Yellow));
-					break;
-				case 3:
-					pic[i].push_back(Pixel("\u2663", Color::Black, Color::Yellow));
-					break;
-				default:
-					pic[i].push_back(Pixel("\u2660", Color::Black, Color::Yellow));
-					break;
-				}
-			}
-		}
+		//for (int i = 0; i < height; i++)
+		//{
+		//	pic.push_back(std::vector<Pixel>());
+		//	for (int j = 0; j < width; j++)
+		//	{
+		//		int a = j % 4;
+		//		switch (a) {
+		//		case 0:
+		//			pic[i].push_back(Pixel("\u2660", Color::Black, Color::Yellow));
+		//			break;
+		//		case 1:
+		//			pic[i].push_back(Pixel("\u2665", Color::Red, Color::Yellow));
+		//			break;
+		//		case 2:
+		//			pic[i].push_back(Pixel("\u2666", Color::Red, Color::Yellow));
+		//			break;
+		//		case 3:
+		//			pic[i].push_back(Pixel("\u2663", Color::Black, Color::Yellow));
+		//			break;
+		//		default:
+		//			pic[i].push_back(Pixel("\u2660", Color::Black, Color::Yellow));
+		//			break;
+		//		}
+		//	}
+		//}
+		pic = PixelParser::Parse("\x1b[48;05;123;38;05;215;01msdfg\u2345\x31\033[3md\x1b[0mgds\4\\\nergwe\033[3mojrigwoei\x1b[0mjrgergewrg");
 		return pic;
 	}
 };

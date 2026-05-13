@@ -16,5 +16,5 @@ public:
 		}
 		perfectWidth = max;
 	}
-	void SetText(std::vector<std::vector<Pixel>> text) { this.text = text; }
+	void SetText(std::vector<std::vector<Pixel>> txt) { text = text; }
 };

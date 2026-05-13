@@ -15,8 +15,8 @@ private:
 	}
 	
 public:
-	ModuleBox(IModule* module, MPlace place,interactive = false): module(module), place(place), interactive(interactive) {}
-	ModuleBox(IModule* module, int X, int Y,interactive = false): module(module), place(MPlace::Free), positionX(X), positionY(Y), interactive(interactive) {}
+	ModuleBox(IModule* module, MPlace place, bool interactive = false): module(module), place(place), interactive(interactive) {}
+	ModuleBox(IModule* module, int X, int Y, bool interactive = false): module(module), place(MPlace::Free), positionX(X), positionY(Y), interactive(interactive) {}
 	void SetPlace(MPlace newPlace) { place = newPlace;}
 	MPlace GetPlace() { return place; }
 

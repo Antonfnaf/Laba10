@@ -18,6 +18,8 @@ public:
 		return binds.GetCopy();
 	}
 };
+
+
 class NullWindow : public IWindow
 {
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const override {
