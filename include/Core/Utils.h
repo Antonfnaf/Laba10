@@ -92,21 +92,7 @@ struct FrameTools
         return frame1;
     }
 
-    //static std::vector<std::vector<Pixel>> StringToPic(std::string text) {
-    //    std::vector<std::vector<Pixel>> pic;
-    //    int bg = 0;
-    //    int fg = 7;
-    //    for (int i = 0; i < text.length(); i++) {
-    //        if (text[i] != '\\') {
-    //            bg = 0;
-    //            fg = 7;
-    //        } else {
-    //            i++;
 
-
-    //        }
-    //    }
-    //}
 };
 
 struct TestTools {

@@ -5,6 +5,7 @@
 
 #include "Core/enums.h"
 #include "Core/Pixel.h"
+#include "Core/Utils.h"
 
 
 class Button
@@ -14,10 +15,11 @@ class Button
 
 public:
 	Button() : action([](){}), name(NONAME) {}
-	Button(Action action) : action(action), name(action) {}
+	Button(std::string name, std::functional<void()> action) : action(action), name(name) {}
 
 	void operator()() const { return action(); }
 	operator std::string() const { return name; }
+	operator std::vector<std::vector<Pixel>> const { return PixelParser::Parse(name); }
 };
 
 
