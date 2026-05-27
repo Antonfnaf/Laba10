@@ -24,10 +24,13 @@ public:
         actions[key] = action;
         return;
     }
+    void Add(Bind bind) {
+        Add(bind.GetCopy());
+        return;
+    }
     void Add(std::map<KeyCode, std::function<void()>> localActions) {
-        for (const auto& [key, action] : localActions) {
+        for (const auto& [key, action] : localActions) 
             actions.insert_or_assign(key, action);
-        }
         return;
     }
     void Clear() {

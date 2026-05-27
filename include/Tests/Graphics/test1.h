@@ -5,9 +5,9 @@
 #include "UIEngine/composition/IWindow.h"
 #include "UIEngine/WindowManager.h"
 
-
 #include "UIEngine/input/InputManager.h"
 
+#include "UI/windows/WButtonList.h"
 
 
 
@@ -44,7 +44,7 @@ class TestWindow1 : public IWindow {
 		//		}
 		//	}
 		//}
-		pic = PixelParser::Parse("\x1b[48;05;123;38;05;215;01msdfg\u2345\x31\033[3md\x1b[0mgds\4\\\nergwe\033[3mojrigwoei\x1b[0mjrgergewrg");
+		pic = Converter::ParseToPic("\x1b[48;05;123;38;05;215;01msdfg\u2345\x31\033[3md\x1b[0mgds\4\\\nergwe\033[3mojrigwoei\x1b[0mjrgergewrg");
 		return pic;
 	}
 };
@@ -122,18 +122,122 @@ public:
 	static void StartTest(int time) {
 		//WindowManager::Init(std::make_unique<TestWindow1>());
 		bool WindowChoise = false;
+		WindowManager::AddWindow("1", std::make_unique<TestWindow1>());
+		WindowManager::AddWindow("2", std::make_unique<TestWindow2>());
+		WindowManager::AddWindow("3", std::make_unique<TestMainWindow>());
+		WindowManager::AddWindow(
+			"4",
+			std::make_unique<WButtonList>(
+				"Window menu",
+				std::vector<Button> {
+					Button("Close window", [&]() {
+						WindowManager::CloseWindow();
+					}),
+					Button("Split menu", [&]() {
+						WindowManager::screen.ChangeFocus(1);
+						WindowManager::OpenWindow("Split menu");
+						WindowManager::screen.ChangeFocus(-1);
+					}),
+					Button("Open window 1", [&]() {
+						WindowManager::screen.ChangeFocus(1);
+						WindowManager::OpenWindow("1");
+						WindowManager::screen.ChangeFocus(-1);
+					}),
+					Button("Open window 2", [&]() {
+						WindowManager::screen.ChangeFocus(1);
+						WindowManager::OpenWindow("2");
+						WindowManager::screen.ChangeFocus(-1);
+					}),
+					Button("Open window 3", [&]() {
+						WindowManager::screen.ChangeFocus(1);
+						WindowManager::OpenWindow("3");
+						WindowManager::screen.ChangeFocus(-1);
+					}),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+						Button(),
+				}
+			)
+		);
+		WindowManager::AddWindow(
+			"Split menu",
+			std::make_unique<WButtonList>(
+				"Split menu",
+				std::vector<Button> {
+			Button("Close window", [&]() {
+				WindowManager::CloseWindow();
+				}),
+				Button("Split menu", [&]() {
+				WindowManager::screen.ChangeFocus(1);
+				WindowManager::OpenWindow("Split menu");
+				WindowManager::screen.ChangeFocus(-1);
+					}),
+				Button("Open window 1", [&]() {
+				WindowManager::screen.ChangeFocus(1);
+				WindowManager::OpenWindow("1");
+				WindowManager::screen.ChangeFocus(-1);
+					}),
+				Button("Open window 2", [&]() {
+				WindowManager::screen.ChangeFocus(1);
+				WindowManager::OpenWindow("2");
+				WindowManager::screen.ChangeFocus(-1);
+					}),
+				Button("Open window 3", [&]() {
+				WindowManager::screen.ChangeFocus(1);
+				WindowManager::OpenWindow("3");
+				WindowManager::screen.ChangeFocus(-1);
+					}),
+		}
+			)
+		);
+
 		WindowManager::binds.Add(KeyCode::Escape,[&]() {time = 0; });
 		WindowManager::binds.Add(KeyCode::CtrlW,[&]() {WindowChoise = true; });
+		//std::unique_ptr buttonList1 =
+
+
 
 		for (int i = 0; i < time; i++)
 		{
-			if (true) {
-				WindowManager::tempBinds.Add({
-					{KeyCode::Digit1, [&]() {WindowManager::OpenWindow(std::make_unique<TestWindow1>()); WindowChoise = false; }},
-					{KeyCode::Digit2, [&]() {WindowManager::OpenWindow(std::make_unique<TestWindow2>()); WindowChoise = false; }},
-					{KeyCode::Digit3, [&]() {WindowManager::OpenWindow(std::make_unique<TestMainWindow>()); WindowChoise = false; }},
-					});
-			}
+			
+			WindowManager::tempBinds.Add({
+				{KeyCode::Digit1, [&]() {WindowManager::OpenWindow("1"); WindowChoise = false; }},
+				{KeyCode::Digit2, [&]() {WindowManager::OpenWindow("2"); WindowChoise = false; }},
+				{KeyCode::Digit3, [&]() {WindowManager::OpenWindow("3"); WindowChoise = false; }},
+				{KeyCode::Digit4, [&]() {WindowManager::OpenWindow("4"); WindowChoise = false; }},
+				});
+
+
 			WindowManager::UpdateActions();
 			WindowManager::UpdateCadre();
 		}

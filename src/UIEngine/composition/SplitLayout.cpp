@@ -17,9 +17,9 @@ std::vector<std::vector<Pixel>> SplitLayout::GetFrameLO(int width, int height, I
 	return result;
 }
 
-std::vector<IWindow*> SplitLayout::GetWindows() const {
-	std::vector<IWindow*> FList = first->GetWindows();
-	std::vector<IWindow*> SList = second->GetWindows();
+std::vector<ILayout*> SplitLayout::GetPaneList() {
+	std::vector<ILayout*> FList = first->GetPaneList();
+	std::vector<ILayout*> SList = second->GetPaneList();
 	FList.insert(FList.end(), SList.begin(), SList.end());
 	return FList;
 }

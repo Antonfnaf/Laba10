@@ -49,7 +49,7 @@ public:
 		}
 		return frame;
 	};
-	virtual std::vector<IWindow*> GetWindows() const = 0;
+	virtual std::vector<ILayout*> GetPaneList() = 0;
 	virtual std::vector<ILayout*> GetPath(IWindow* window) = 0;
 };
 

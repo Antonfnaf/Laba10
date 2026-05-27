@@ -58,7 +58,7 @@ public:
 
 
 
-	std::vector<IWindow*> GetWindows() const;
+	std::vector<ILayout*> GetPaneList() override;
 	std::vector<ILayout*> GetPath(IWindow* window) override;
 
 

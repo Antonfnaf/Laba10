@@ -10,23 +10,29 @@
 
 class Button
 {
-	std::functional<void()> action;
+	std::function<void()> action;
 	std::string name;
-
+	std::vector<std::vector<Pixel>> vname = std::vector<std::vector<Pixel>>();
 public:
-	Button() : action([](){}), name(NONAME) {}
-	Button(std::string name, std::functional<void()> action) : action(action), name(name) {}
+	Button() : action([](){}), name("NONAME"), vname(Converter::ParseToPic(name)){}
+	Button(std::string name, std::function<void()> action) : action(action), name(name), vname(Converter::ParseToPic(name)) {
+		name = Converter::ParseToString(vname);
+	}
+	Button(std::vector<std::vector<Pixel>> name, std::function<void()> action) : action(action), name(Converter::ParseToString(name)), vname(name) {}
 
 	void operator()() const { return action(); }
 	operator std::string() const { return name; }
-	operator std::vector<std::vector<Pixel>> const { return PixelParser::Parse(name); }
+	operator std::vector<std::vector<Pixel>>() const { return vname; }
+	std::vector<Pixel> Get() const { return vname[0]; }
+	std::vector<Pixel> GetSelect() const {
+		auto v = vname;
+		for (int i = 0; i < v[0].size(); i++) {
+		v[0][i] = Pixel(v[0][i].symbol,v[0][i].fgColor,v[0][i].bgColor);
+		v[0][i].reverse = true;
+		}
+		return v[0]; 
+	}
 };
-
-
-
-
-
-
 
 
 

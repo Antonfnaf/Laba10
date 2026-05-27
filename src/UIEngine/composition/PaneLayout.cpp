@@ -14,8 +14,8 @@ std::vector<std::vector<Pixel>> PaneLayout::GetFrameLO(int width, int height, IW
 	return frame.PasteInFrame(window->GetFrame(width - 2, height - 2));
 }
 
-std::vector<IWindow*> PaneLayout::GetWindows() const {
-	return { window.get() };
+std::vector<ILayout*> PaneLayout::GetPaneList() {
+	return { this };
 }
 std::vector<ILayout*> PaneLayout::GetPath(IWindow* window) {
 	if (Compare(window)) {

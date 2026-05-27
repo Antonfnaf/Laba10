@@ -134,10 +134,10 @@ struct TestTools {
 
 
 // ===== Статический парсер =====
-class PixelParser
+class Converter
 {
 public:
-    static std::vector<std::vector<Pixel>> Parse(const std::string& input, bool appendReset = false) {
+    static std::vector<std::vector<Pixel>> ParseToPic(const std::string& input, bool appendReset = false) {
         std::vector<std::vector<Pixel>> rows;
         std::vector<Pixel> currentRow;
         std::string pendingStyles; // Накопитель стилей/сбросов для следующего символа
@@ -249,5 +249,35 @@ public:
 
         finalizeRow(appendReset);
         return rows;
+    }
+
+    /////////////////////////////////////////*
+    static std::string ParseToString(std::vector<std::vector<Pixel>> input, bool appendReset = false) {
+        std::string str;
+        
+        Color lastFg = (Color)0;
+        Color lastBg = (Color)0;
+        for (int i = 0; i < input.size(); i++)
+        {
+            for (int j = 0; j < input[i].size(); j++)
+            {
+                Color bg = input[i][j].bgColor;
+                Color fg = input[i][j].fgColor;
+                if (bg !=lastBg)
+                {
+                    lastBg = bg;
+                    str += "\033[48;05;" + std::to_string((int)lastBg) + "m";
+                }
+                if (fg !=lastFg)
+                {
+                    lastFg = fg;
+                    str += "\033[48;05;" + std::to_string((int)lastFg) + "m";
+                }
+                str += input[i][j].Get();
+            }
+            str += "\n";
+        }
+       
+        return str;
     }
 };

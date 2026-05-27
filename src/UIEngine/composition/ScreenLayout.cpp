@@ -1,18 +1,22 @@
 #include "UIEngine/composition/ScreenLayout.h"
 
 
+
+void ScreenLayout::SetFocusPane(ILayout* pane) {
+	active = pane;
+}
 void ScreenLayout::ChangeFocus(int num) {
 	if (!root.get()) return;
-	std::vector<IWindow*> windowList = root->GetWindows();
-	if (windowList.empty()) return;
+	std::vector<ILayout*> paneList = root->GetPaneList();
+	if (paneList.empty()) return;
 	int index = 0;
-	for (int i = 0; i < windowList.size();i++) 
-		if (windowList[i] == active)
+	for (int i = 0; i < paneList.size();i++) 
+		if (paneList[i] == active)
 			index = i;
 	
-	int newIndex = (index + num) % (int)windowList.size();
-	if (newIndex < 0) newIndex += windowList.size();
-	active = windowList[newIndex];
+	int newIndex = (index + num) % (int)paneList.size();
+	if (newIndex < 0) newIndex += paneList.size();
+	SetFocusPane(paneList[newIndex]);
 }
 void ScreenLayout::FocusNext() {
 	ChangeFocus(1);
@@ -21,12 +25,10 @@ void ScreenLayout::FocusPrev() {
 	ChangeFocus(-1);
 }
 
-
-
-void ScreenLayout::SetActive(std::unique_ptr<IWindow> window) {
+void ScreenLayout::SetActive(IWindow* window) {
 	if (!root.get()) {
-		active = window.get();
-		root = std::make_unique<PaneLayout>(std::move(window));
+		root = std::make_unique<PaneLayout>(window);
+		SetFocusPane(root.get());
 		return;
 	}
 	std::vector<ILayout*> path = root->GetPath(active);
@@ -34,58 +36,58 @@ void ScreenLayout::SetActive(std::unique_ptr<IWindow> window) {
 
 	PaneLayout* pane = dynamic_cast<PaneLayout*>(path[0]);
 	if (pane) {
-		active = window.get();
-		pane->SetWindow(std::move(window));
+		pane->SetWindow(window);
+		SetFocusPane(pane);
 	}
 }
 
-void ScreenLayout::SplitActive(std::unique_ptr<IWindow> window, bool vertical) {
+void ScreenLayout::SplitActive(IWindow* window, bool vertical) {
 	if (!root.get()) { 
-		active = window.get();
-		root = std::make_unique<PaneLayout>(std::move(window));
+		root = std::make_unique<PaneLayout>(window);
+		SetFocusPane(root.get());
 		return;
 	}
 	std::vector<ILayout*> path = root->GetPath(active);
 	if (path.empty()) return;
 
 	if (path.size() == 1) {
-		active = window.get();
 		std::unique_ptr<ILayout> first = std::move(root);
 		std::unique_ptr<ILayout> second = std::make_unique<PaneLayout>(std::move(window));
+		SetFocusPane(second.get());
 		root = std::make_unique<SplitLayout>(std::move(first),std::move(second),0.5,vertical);
 	} else {
 		SplitLayout* parent = dynamic_cast<SplitLayout*>(path[1]);
 		if (!parent) return;
 		if (parent->GetFirst() == path[0]) {
-			active = window.get();
 			std::unique_ptr<ILayout> first = std::move(parent->ReleaseFirst());
 			std::unique_ptr<ILayout> second = std::make_unique<PaneLayout>(std::move(window));
+			SetFocusPane(second.get());
 			parent->SetFirst(std::make_unique<SplitLayout>(std::move(first), std::move(second), 0.5, vertical));
 		} else {
-			active = window.get();
 			std::unique_ptr<ILayout> first = std::move(parent->ReleaseSecond());
 			std::unique_ptr<ILayout> second = std::make_unique<PaneLayout>(std::move(window));
+			SetFocusPane(second.get());
 			parent->SetSecond(std::make_unique<SplitLayout>(std::move(first), std::move(second), 0.5, vertical));
 		}
 	}
 }
 
-void ScreenLayout::DeleteActive() {
+void ScreenLayout::DeletePane(IWindow* pane) {
 	if (!root.get()) return;
-	std::vector<ILayout*> path = root->GetPath(active);
+	std::vector<ILayout*> path = root->GetPath(pane);
 	if (path.empty()) return;
 
 	if (path.size() == 1) {
-		active = nullptr;
+		SetFocusPane(nullptr);
 		root = nullptr;
 	} else if (path.size() == 2) {
 		SplitLayout* parent = dynamic_cast<SplitLayout*>(path[1]);
 		if (!parent) return;
 		if (parent->GetFirst() == path[0]) {
-			active = (!parent->GetSecond()->GetWindows().empty()) ? parent->GetSecond()->GetWindows()[0] : nullptr;
+			SetFocusPane((!parent->GetSecond()->GetPaneList().empty()) ? parent->GetSecond()->GetPaneList()[0] : nullptr);
 			root = std::move(parent->ReleaseSecond());
 		} else {
-			active = (!parent->GetFirst()->GetWindows().empty()) ? parent->GetFirst()->GetWindows()[0] : nullptr;
+			SetFocusPane((!parent->GetFirst()->GetPaneList().empty()) ? parent->GetFirst()->GetPaneList()[0] : nullptr);
 			root = std::move(parent->ReleaseFirst());
 		}
 	} else {
@@ -94,27 +96,29 @@ void ScreenLayout::DeleteActive() {
 		if (!parent) return;
 		if (grandParent->GetFirst() == path[1]) {
 			if (parent->GetFirst() == path[0]) {
-				active = (!parent->GetSecond()->GetWindows().empty()) ? parent->GetSecond()->GetWindows()[0] : nullptr;
+				SetFocusPane((!parent->GetSecond()->GetPaneList().empty()) ? parent->GetSecond()->GetPaneList()[0] : nullptr);
 				grandParent->SetFirst(std::move(parent->ReleaseSecond()));
 			} else {
-				active = (!parent->GetFirst()->GetWindows().empty()) ? parent->GetFirst()->GetWindows()[0] : nullptr;
+				SetFocusPane((!parent->GetFirst()->GetPaneList().empty()) ? parent->GetFirst()->GetPaneList()[0] : nullptr);
 				grandParent->SetFirst(std::move(parent->ReleaseFirst()));
 			}
 		} else {
 			if (parent->GetFirst() == path[0]) {
-				active = (!parent->GetSecond()->GetWindows().empty()) ? parent->GetSecond()->GetWindows()[0] : nullptr;
+				SetFocusPane((!parent->GetSecond()->GetPaneList().empty()) ? parent->GetSecond()->GetPaneList()[0] : nullptr);
 				grandParent->SetSecond(std::move(parent->ReleaseSecond()));
 			} else {
-				active = (!parent->GetFirst()->GetWindows().empty()) ? parent->GetFirst()->GetWindows()[0] : nullptr;
+				SetFocusPane((!parent->GetFirst()->GetPaneList().empty()) ? parent->GetFirst()->GetPaneList()[0] : nullptr);
 				grandParent->SetSecond(std::move(parent->ReleaseFirst()));
 			}
 		}
 	}
 }
 
+void ScreenLayout::DeleteActive() {
+	DeletePane(active);
+}
 
-
-SplitLayout* findResizeSplit(const std::vector<ILayout*>& path, Direction dir) {
+SplitLayout* ScreenLayout::FindRootSplit(const std::vector<ILayout*>& path, Direction dir) const {
 	
 	for (int i = 1; i < path.size(); i++) {
 		SplitLayout* split = dynamic_cast<SplitLayout*>(path[i]);
@@ -160,11 +164,9 @@ std::pair<int, int> ScreenLayout::FindLayoutSize(ILayout* layoutToFind, ILayout*
 	return std::make_pair(rootWidth, rootHeight);
 }
 
-std::pair<int, int> ScreenLayout::FindLayoutSize(ILayout* layout) {
+std::pair<int, int> ScreenLayout::FindLayoutSize(ILayout* layout) const {
 	return FindLayoutSize(layout, root.get(), screenWidth,screenHeight);
 }
-
-
 
 void ScreenLayout::ResizeActiveRatio(float newRatio, Direction direction) {
 	if (!root.get()) return;
@@ -172,7 +174,7 @@ void ScreenLayout::ResizeActiveRatio(float newRatio, Direction direction) {
 	if (path.empty()) return;
 	if (path.size() == 1) return;
 
-	SplitLayout* resizeSplit = findResizeSplit(path, direction);
+	SplitLayout* resizeSplit = FindRootSplit(path, direction);
 	if (!resizeSplit) return;
 	resizeSplit->SetRatio(newRatio);	
 }
@@ -183,7 +185,7 @@ void ScreenLayout::ChangeActiveRatio(float ratioplus, Direction direction) {
 	if (path.empty()) return;
 	if (path.size() == 1) return;
 
-	SplitLayout* resizeSplit = findResizeSplit(path, direction);
+	SplitLayout* resizeSplit = FindRootSplit(path, direction);
 	if (!resizeSplit) return;
 	if (direction == Direction::Left || direction == Direction::Up)
 		resizeSplit->SetRatio(resizeSplit->GetRatio() - ratioplus);
@@ -198,7 +200,7 @@ bool ScreenLayout::ResizeActiveToOnePixel(Direction direction, bool pos) {
 	if (path.size() == 1) return false;
 
 
-	SplitLayout* resizeSplit = findResizeSplit(path, direction);
+	SplitLayout* resizeSplit = FindRootSplit(path, direction);
 	if (!resizeSplit) return false;
 	bool activeInFirst = direction == Direction::Down || direction == Direction::Right;
 	SplitLayout* Split1 = activeInFirst ? dynamic_cast<SplitLayout*>(resizeSplit->GetFirst()): dynamic_cast<SplitLayout*>(resizeSplit->GetSecond());
@@ -265,35 +267,37 @@ void ScreenLayout::UpdateBinds() {
 	binds.Clear();
 	if (root.get())
 		binds.Add(root->GetBinds(active));
-	binds.Add(
-		{
-			{KeyCode::CtrlL, [&]() {FocusNext(); }},
-			{KeyCode::AltRightArrow, [&]() {FocusNext(); }},
-			{KeyCode::CtrlH, [&]() {FocusPrev(); }},
-			{KeyCode::AltLeftArrow, [&]() {FocusPrev(); }},
-			{KeyCode::CtrlRightArrow, [&]() {SplitActive(std::make_unique<NullWindow>(),false); }},
-			{KeyCode::CtrlDownArrow, [&]() {SplitActive(std::make_unique<NullWindow>(),true); }},
-			{KeyCode::CtrlD, [&]() {DeleteActive(); }},
-			{KeyCode::ShiftRightArrow, [&]() {
-				if (!ResizeActiveToOnePixel(Direction::Right,true)) {
-					ResizeActiveToOnePixel(Direction::Left, false);
-				} 
-			}},
-			{KeyCode::ShiftLeftArrow, [&]() {
-				if (!ResizeActiveToOnePixel(Direction::Left,true)) {
-					ResizeActiveToOnePixel(Direction::Right, false);
-				} 
-			}},
-			{KeyCode::ShiftDownArrow, [&]() {
-				if (!ResizeActiveToOnePixel(Direction::Down,true)) {
-					ResizeActiveToOnePixel(Direction::Up, false);
-				} 
-			}},
-			{KeyCode::ShiftUpArrow, [&]() {
-				if (!ResizeActiveToOnePixel(Direction::Up,true)) {
-					ResizeActiveToOnePixel(Direction::Down, false);
-				} 
-			}},
-		}
-	);
+	if(defaultBindsIsOn)
+		binds.Add(
+			{
+				{KeyCode::CtrlL, [&]() {FocusNext(); }},
+				{KeyCode::AltRightArrow, [&]() {FocusNext(); }},
+				{KeyCode::CtrlH, [&]() {FocusPrev(); }},
+				{KeyCode::AltLeftArrow, [&]() {FocusPrev(); }},
+				{KeyCode::CtrlRightArrow, [&]() {SplitActive(new NullWindow(),false); }},
+				{KeyCode::CtrlDownArrow, [&]() {SplitActive(new NullWindow(),true); }},
+				{KeyCode::CtrlD, [&]() {DeleteActive(); }},
+				{KeyCode::ShiftRightArrow, [&]() {
+					if (!ResizeActiveToOnePixel(Direction::Right,true)) {
+						ResizeActiveToOnePixel(Direction::Left, false);
+					} 
+				}},
+				{KeyCode::ShiftLeftArrow, [&]() {
+					if (!ResizeActiveToOnePixel(Direction::Left,true)) {
+						ResizeActiveToOnePixel(Direction::Right, false);
+					} 
+				}},
+				{KeyCode::ShiftDownArrow, [&]() {
+					if (!ResizeActiveToOnePixel(Direction::Down,true)) {
+						ResizeActiveToOnePixel(Direction::Up, false);
+					} 
+				}},
+				{KeyCode::ShiftUpArrow, [&]() {
+					if (!ResizeActiveToOnePixel(Direction::Up,true)) {
+						ResizeActiveToOnePixel(Direction::Down, false);
+					} 
+				}},
+			}
+		);
+	binds.Add(userBinds);
 }

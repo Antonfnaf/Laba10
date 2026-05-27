@@ -10,7 +10,7 @@ private:
 	int positionY = 0;
 
 	bool interactive;
-	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) override {
+	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const override  {
 		return module->GetFrame(width, height);
 	}
 	

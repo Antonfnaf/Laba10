@@ -17,10 +17,10 @@ class PaneLayout : public ILayout
 {
 public:
 	bool const Compare(IWindow* active) const {
-		return window.get() == active;
+		return this == active;
 	}
 private:
-	std::unique_ptr<IWindow> window;
+	IWindow* window;
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const override;
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height, IWindow* active) const override;
 	void UpdateBinds() override {
@@ -34,11 +34,12 @@ private:
 			binds.Add(window->GetBinds());
 	}
 public:
-	PaneLayout(std::unique_ptr<IWindow> nwindow) : window(std::move(nwindow)) {}
+	PaneLayout() : window(nullptr) {}
+	PaneLayout(IWindow* nwindow) : window(nwindow) {}
 
-	void SetWindow(std::unique_ptr<IWindow> newWindow) {
-		window = std::move(newWindow);
+	void SetWindow(IWindow* newWindow) {
+		window = newWindow;
 	}
-	std::vector<IWindow*> GetWindows() const override;
+	std::vector<ILayout*> GetPaneList() override;
 	std::vector<ILayout*> GetPath(IWindow* window) override;
 };
