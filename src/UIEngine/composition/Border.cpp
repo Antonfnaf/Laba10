@@ -1,13 +1,13 @@
-#include "UIEngine/composition/OldFrame.h"
+#include "UIEngine/composition/Border.h"
 
 
 
 
-OldFrame::OldFrame(BorderType type, Color fg, Color bg, int thickness) :
+Border::Border(BorderType type, Color fg, Color bg, int thickness) :
 	type(type), bgColor(bg), fgColor(fg), thickness(thickness) {}
 
 
-std::string OldFrame::GetBorder(BorderType type, BorderPlace place) {
+std::string Border::GetBorder(BorderType type, BorderPlace place) {
 	switch (type)
 	{
 	case BorderType::Simple:
@@ -109,7 +109,7 @@ std::string OldFrame::GetBorder(BorderType type, BorderPlace place) {
 	}
 }
 
-std::string OldFrame::ChangeBorder(int i, int j, BorderPlace corner, BorderPlace edgeH, BorderPlace edgeV) {
+std::string Border::ChangeBorder(int i, int j, BorderPlace corner, BorderPlace edgeH, BorderPlace edgeV) {
 	if (i == 0 && j == 0)
 		return GetBorder(corner);
 	else if (i == 0)
@@ -120,7 +120,7 @@ std::string OldFrame::ChangeBorder(int i, int j, BorderPlace corner, BorderPlace
 		return GetBorder(BorderPlace::Cross);
 }
 
-std::vector<std::vector<Pixel>> const OldFrame::PasteInFrame(std::vector<std::vector<Pixel>> picToPaste) {
+std::vector<std::vector<Pixel>> const Border::PasteInFrame(std::vector<std::vector<Pixel>> picToPaste) {
 	int picWidth, picHeight;
 	picHeight = picToPaste.size();
 	picWidth = 0;

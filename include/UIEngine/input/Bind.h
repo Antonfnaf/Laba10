@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <functional>
-#include <vector>
 #include <map>
 
 #include "Core/enums.h"
@@ -14,6 +13,9 @@ private:
     std::map<KeyCode, std::function<void()>> actions;
 
 public:
+    std::function<void()>& operator[](KeyCode key) {
+        return actions[key];
+    }
     bool contains(KeyCode key) const {
         return actions.find(key) != actions.end();
     }
@@ -33,10 +35,10 @@ public:
             actions.insert_or_assign(key, action);
         return;
     }
-    void Clear() {
+    void ClearAll() {
         actions.clear();
     }
-    std::function<void()>& operator[](KeyCode key) {
-        return actions[key];
+    void ClearKey(KeyCode key) {
+        actions[key] = [](){};
     }
 };

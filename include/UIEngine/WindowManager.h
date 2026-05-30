@@ -35,7 +35,7 @@ public:
 		temp.Add(screen.GetBinds());
 		temp.Add(tempBinds.GetCopy());
 		temp.Add(binds.GetCopy());
-		tempBinds.Clear();
+		tempBinds.ClearAll();
 		return temp.GetCopy();
 	}
 

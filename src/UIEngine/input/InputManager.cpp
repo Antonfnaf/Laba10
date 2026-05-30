@@ -361,7 +361,7 @@ void InputManager::Bind(std::map<KeyCode, std::function<void()>> localActions) {
     actions.Add(localActions);
 }
 void InputManager::ClearBinds() {
-    actions.Clear();
+    actions.ClearAll();
 }
 
 

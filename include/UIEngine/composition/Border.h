@@ -6,7 +6,7 @@
 #include "Core/Pixel.h"
 
 
-class OldFrame {
+class Border {
 
 	BorderType type;
 	int thickness;
@@ -15,7 +15,7 @@ class OldFrame {
 	std::string ChangeBorder(int i, int j, BorderPlace corner, BorderPlace edgeH, BorderPlace edgeV);
 	std::string GetBorder(BorderPlace place) { return GetBorder(type, place); }
 public:
-	OldFrame(BorderType type = BorderType::Simple, Color fg = Color::White, Color bg = Color::Black, int thickness = 1);
+	Border(BorderType type = BorderType::Simple, Color fg = Color::White, Color bg = Color::Black, int thickness = 1);
 	static std::string GetBorder(BorderType type, BorderPlace place);
 	int Get_Thickness() { return thickness; }
 	void SetType(BorderType type) { this->type = type; }

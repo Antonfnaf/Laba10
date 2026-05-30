@@ -20,18 +20,18 @@ class SplitLayout final : public ILayout
 		return GetFrameLO(width, height, nullptr);
 	}
 	void UpdateBinds() override {
-		binds.Clear();
+		binds.ClearAll();
 		binds.Add(first->GetBinds());
 		binds.Add(second->GetBinds());
 	}
 	void UpdateBinds(IWindow* active) override {
-		binds.Clear();
+		binds.ClearAll();
 		binds.Add(first->GetBinds(active));
 		binds.Add(second->GetBinds(active));
 	}
 
-	bool resetRatioForOnePixel(int _size, bool _first, bool _positive, int _minSize = MINSIZE);
-	bool resizeChild(SplitLayout* _first, SplitLayout* _second, int _width, int _height, bool pos, Direction dir);
+	//bool resetRatioForOnePixel(int _size, bool _first, bool _positive, int _minSize = MINSIZE);
+	//bool resizeChild(SplitLayout* _first, SplitLayout* _second, int _width, int _height, bool pos, Direction dir);
 public:
 	SplitLayout(std::unique_ptr<ILayout> firstLayout, std::unique_ptr<ILayout> secondLayout, float ratio = 0.5, bool vert = false) : first(std::move(firstLayout)), second(std::move(secondLayout)), firstRatio(std::clamp(ratio, 0.0f, 1.0f)), vertical(vert) {}
 
@@ -39,9 +39,8 @@ public:
 	bool IsVert() { return vertical; }
 	float GetRatio() { return firstRatio; }
 	void SetRatio(float newRatio) { firstRatio = std::clamp(newRatio, 0.0f, 1.0f); }
+	//bool ResizeOnePixel(int width, int height, Direction dir, bool pos);
 
-	ILayout* GetFirst() const { return first.get(); }
-	ILayout* GetSecond() const { return second.get(); }
 	void SetFirst(std::unique_ptr<ILayout> newLayout) {
 		if (newLayout != nullptr) {
 			first = std::move(newLayout);
@@ -52,6 +51,9 @@ public:
 			second = std::move(newLayout);
 		}
 	}
+	ILayout* GetFirst() const { return first.get(); }
+	ILayout* GetSecond() const { return second.get(); }
+
 
 	std::unique_ptr<ILayout> ReleaseFirst() { return std::move(first); }
 	std::unique_ptr<ILayout> ReleaseSecond() { return std::move(second); }
@@ -63,7 +65,14 @@ public:
 
 
 
-	bool ResizeOnePixel(int width, int height, Direction dir, bool pos);
+
+	//-- from ILayout --
+	// Bind binds
+	// virtual GetFrameLO(int width, int height)
+	// GetFrame(int width, int height)
+	// GetFrame(int width, int height, IWindow* active)
+	// GetBinds();
+	// GetBinds(IWindow* active);
 };
 	///////////////////////////////////////////////////////////////
 

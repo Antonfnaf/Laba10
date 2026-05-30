@@ -9,26 +9,39 @@
 #include "UIEngine/composition/IWindow.h"
 #include "UIEngine/input/Bind.h"
 
+
+//Интерфейс для окон хранящих другие окна и передающих информацию рекурсивно   
 class ILayout : public IWindow {
 protected:
+
+	//Возвращает картинку обьекта под заданные размеры с передачей активного окна
 	virtual std::vector<std::vector<Pixel>> GetFrameLO(int width, int height, IWindow* active) const = 0;
 	
+	//Обновление действий при каждом кадре.
 	virtual void UpdateBinds() = 0;
+	//Обновление действий при каждом кадре, с зависимостью от активного обьекта.
 	virtual void UpdateBinds(IWindow* active) = 0;
 	static const int MINSIZE = 2;
 
 
 public: 
+	//Возвращает список вложенных панелей
+	virtual std::vector<ILayout*> GetPaneList() = 0;
+	//Возвращает список лейаутов до искомого окна
+	virtual std::vector<ILayout*> GetPath(IWindow* window) = 0;
+	//Безопасное получние действий
 	std::map<KeyCode, std::function<void()>> GetBinds() {
-		binds.Clear();
+		binds.ClearAll();
 		UpdateBinds();
 		return binds.GetCopy();
 	}
+	//Безопасное получние действий с зависимостью от активного обьекта
 	std::map<KeyCode, std::function<void()>> GetBinds(IWindow* active) {
-		binds.Clear();
+		binds.ClearAll();
 		UpdateBinds(active);
 		return binds.GetCopy();
 	}
+	//Немного измененная функция получения прямоугольной картинки
 	std::vector<std::vector<Pixel>> GetFrame(int width, int height, IWindow* active) const {
 		if (height < 0)
 			height = 0;
@@ -49,7 +62,11 @@ public:
 		}
 		return frame;
 	};
-	virtual std::vector<ILayout*> GetPaneList() = 0;
-	virtual std::vector<ILayout*> GetPath(IWindow* window) = 0;
+
+	//-- from IWindow --
+	// Bind binds
+	// virtual GetFrameLO(int width, int height)
+	// GetFrame(int width, int height)
+	// GetBinds();
 };
 

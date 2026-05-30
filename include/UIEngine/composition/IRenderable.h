@@ -6,8 +6,10 @@
 class IRenderable
 {
 protected:
+	//Возвращает картинку обьекта под заданные размеры. Логика может меняться от класса.
 	virtual std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const = 0;
 public:
+	//Возвращает прямоугольную картинку пикселей по данным размерам. Не для реализации, использует GetFrameLO
 	std::vector<std::vector<Pixel>> GetFrame(int width, int height) const {
 		if (height < 0)
 			height = 0;

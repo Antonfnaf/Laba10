@@ -21,7 +21,7 @@ class ScreenLayout final : public ILayout {
 
 	//Дает размеры искомого лейаута внутри корня
 	std::pair<int, int> FindLayoutSize(ILayout* layout) const ;
-	SplitLayout* FindRootSplit(const std::vector<ILayout*>& path, Direction dir) const;
+	SplitLayout* FindSplitByDirection(const std::vector<ILayout*>& path, Direction dir) const;
 	
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height, IWindow* active) const override {
 		if(root.get())
@@ -40,12 +40,12 @@ class ScreenLayout final : public ILayout {
 public:
 	ScreenLayout(std::unique_ptr<ILayout> layout) : root(std::move(layout)), active((!root->GetPaneList().empty()) ? root->GetPaneList()[0] : nullptr) {}
 	
-	//Дает размеры искомого лейаут43а внутри выбранного лейаута
+	//Дает размеры искомого лейаута внутри выбранного лейаута
 	static std::pair<int, int> FindLayoutSize(ILayout* layoutToFind, ILayout* rootLayout, int rootWidth,int rootHeight);
 
 	//позволяет получить клавиши скрина и активного окна
 	std::map<KeyCode, std::function<void()>> GetBinds() {
-		binds.Clear();
+		binds.ClearAll();
 
 		UpdateBinds();
 		return binds.GetCopy();
@@ -76,11 +76,12 @@ public:
 	void SplitActive(IWindow* window, bool vertical = false);
 
 	//Позволяет изменить долю активного окна по выбранному направлению
-	void ResizeActiveRatio(float newRatio, Direction direction);
+	void SetSplitRatio(SplitLayout* split, float newRatio);
 	//Позволяет изменить долю активного окна на количество пикселей по выбранному направлению
-	void ChangeActiveRatio(float ratioplus, Direction direction);
+	void ChangeSplitRatio(SplitLayout* split, float delta);
+	void ChangeSplitByPixels(SplitLayout* split, int delta);
 	//Позволяет изменить активное окно на один пиксель по выбранному направлению в большую сторону или меньшую
-	bool ResizeActiveToOnePixel(Direction direction, bool pos);
+	bool ResizeActiveByPixels(Direction direction, int delta);
 
 	void DefaultBindsDisable() { defaultBindsIsOn = false; }
 	void DefaultBindsEnable() { defaultBindsIsOn = true; }

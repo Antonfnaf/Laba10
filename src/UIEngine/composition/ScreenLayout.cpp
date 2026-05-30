@@ -118,7 +118,7 @@ void ScreenLayout::DeleteActive() {
 	DeletePane(active);
 }
 
-SplitLayout* ScreenLayout::FindRootSplit(const std::vector<ILayout*>& path, Direction dir) const {
+SplitLayout* ScreenLayout::FindSplitByDirection(const std::vector<ILayout*>& path, Direction dir) const {
 	
 	for (int i = 1; i < path.size(); i++) {
 		SplitLayout* split = dynamic_cast<SplitLayout*>(path[i]);
@@ -168,94 +168,44 @@ std::pair<int, int> ScreenLayout::FindLayoutSize(ILayout* layout) const {
 	return FindLayoutSize(layout, root.get(), screenWidth,screenHeight);
 }
 
-void ScreenLayout::ResizeActiveRatio(float newRatio, Direction direction) {
-	if (!root.get()) return;
-	std::vector<ILayout*> path = root->GetPath(active);
-	if (path.empty()) return;
-	if (path.size() == 1) return;
-
-	SplitLayout* resizeSplit = FindRootSplit(path, direction);
-	if (!resizeSplit) return;
-	resizeSplit->SetRatio(newRatio);	
+void ScreenLayout::SetSplitRatio(SplitLayout* split, float newRatio) {
+	if (!split) return;
+	split->SetRatio(newRatio);
 }
 
-void ScreenLayout::ChangeActiveRatio(float ratioplus, Direction direction) {
-	if (!root.get()) return;
-	std::vector<ILayout*> path = root->GetPath(active);
-	if (path.empty()) return;
-	if (path.size() == 1) return;
-
-	SplitLayout* resizeSplit = FindRootSplit(path, direction);
-	if (!resizeSplit) return;
-	if (direction == Direction::Left || direction == Direction::Up)
-		resizeSplit->SetRatio(resizeSplit->GetRatio() - ratioplus);
-	else
-		resizeSplit->SetRatio(resizeSplit->GetRatio() + ratioplus);
+void ScreenLayout::ChangeSplitRatio(SplitLayout* split, float delta) {
+	SetSplitRatio(split,split->GetRatio() + delta);
 }
 
-bool ScreenLayout::ResizeActiveToOnePixel(Direction direction, bool pos) {
+void ScreenLayout::ChangeSplitByPixels(SplitLayout* split, int delta) {
+	std::pair<int, int> size = FindLayoutSize(split);
+	int totalSize;
+	if (split->IsVert()) {
+		totalSize = size.second;
+	} else {
+		totalSize = size.first;
+	}
+	float deltaRatio = static_cast<float>(delta) / static_cast<float>(totalSize);
+	ChangeSplitRatio(split, deltaRatio);
+}
+
+
+bool ScreenLayout::ResizeActiveByPixels(Direction direction, int delta) {
+	// 1. Находим путь к активному окну
 	if (!root.get()) return false;
 	std::vector<ILayout*> path = root->GetPath(active);
-	if (path.empty()) return false;
-	if (path.size() == 1) return false;
+	if (path.size() <2) return false;
+
+	// 2. Находим сплит, который нужно изменять
+	SplitLayout* split = FindSplitByDirection(path, direction);
+	if (!split) return false;
 
 
-	SplitLayout* resizeSplit = FindRootSplit(path, direction);
-	if (!resizeSplit) return false;
-	bool activeInFirst = direction == Direction::Down || direction == Direction::Right;
-	SplitLayout* Split1 = activeInFirst ? dynamic_cast<SplitLayout*>(resizeSplit->GetFirst()): dynamic_cast<SplitLayout*>(resizeSplit->GetSecond());
-	SplitLayout* Split2 = !activeInFirst ? dynamic_cast<SplitLayout*>(resizeSplit->GetFirst()): dynamic_cast<SplitLayout*>(resizeSplit->GetSecond());
-	
-	std::pair size = FindLayoutSize(resizeSplit);
-	int ratioSize = resizeSplit->IsVert() ? size.second : size.first;/*
-	static_cast<int>(ratioSize * resizeSplit->GetRatio())*/
-	int fSize = activeInFirst ? static_cast<int>(ratioSize * resizeSplit->GetRatio()) : ratioSize - static_cast<int>(ratioSize * resizeSplit->GetRatio());
-	int sSize = !activeInFirst ? static_cast<int>(ratioSize * resizeSplit->GetRatio()) : ratioSize - static_cast<int>(ratioSize * resizeSplit->GetRatio());
-	bool ans = false;
-	if (resizeSplit->IsVert()) {
-		if (Split1) { ans = Split1->ResizeOnePixel(size.first, fSize, direction, pos); } else { ans = true; }
-		if (ans && Split2) { ans = Split2->ResizeOnePixel(size.first, sSize, (Direction)(((int)direction + 2) % 4), !pos);}
-		if(!ans&&Split1){ Split1->ResizeOnePixel(size.first, fSize, direction, !pos); }
-	} else {
-		if (Split1) { ans = Split1->ResizeOnePixel(fSize, size.second, direction, pos); } else { ans = true; }
-		if (ans && Split2) { Split2->ResizeOnePixel(sSize, size.second, (Direction)(((int)direction + 2) % 4), !pos); }
-		if(!ans && Split1){ Split1->ResizeOnePixel(fSize, size.second, direction, !pos); }
-	}
-
-
-	int _minSize = MINSIZE;
-	int inc = pos ? 1 : -1;
-	float newRatio = 0;
-	float oldRatio = resizeSplit->GetRatio();
-	int oldSize = fSize;
-	if (activeInFirst) {/*
-		int i = 0;
-		do {*/
-		fSize = fSize + inc;
-		newRatio = static_cast<float>(fSize) / ratioSize;/*
-		i++;
-		} while (static_cast<int>(std::round(ratioSize * newRatio)) == oldSize && i < 3);*/
-		if (newRatio == oldRatio) {
-			fSize = fSize + inc;
-			newRatio = static_cast<float>(fSize) / ratioSize;
-		}
-	} else {/*
-		int i = 0;
-		do {*/
-			fSize = fSize + inc;
-			newRatio = static_cast<float>(ratioSize - fSize) / ratioSize;/*
-			i++;
-		} while (static_cast<int>(std::round(ratioSize * newRatio)) == (ratioSize - oldSize) && i < 3);*/
-			if (newRatio == oldRatio) {
-				fSize = fSize + inc;
-				newRatio = static_cast<float>(ratioSize - fSize) / ratioSize;
-			}
-	}
-	if (fSize >= _minSize && (ratioSize - fSize) >= _minSize && ans) {
-		resizeSplit->SetRatio(newRatio);
-		ans = true;
-	} else ans = false;
-	return ans;
+	// 3. Определяем, первое ли окно в этом сплите
+	bool isFirst = direction == Direction::Down || direction == Direction::Right;
+	int finaleDelta = isFirst ? delta : delta * -1;
+	ChangeSplitByPixels(split, finaleDelta);
+	return true;
 }
 
 
@@ -264,7 +214,7 @@ bool ScreenLayout::ResizeActiveToOnePixel(Direction direction, bool pos) {
 //} 
 
 void ScreenLayout::UpdateBinds() {
-	binds.Clear();
+	binds.ClearAll();
 	if (root.get())
 		binds.Add(root->GetBinds(active));
 	if(defaultBindsIsOn)
@@ -278,24 +228,24 @@ void ScreenLayout::UpdateBinds() {
 				{KeyCode::CtrlDownArrow, [&]() {SplitActive(new NullWindow(),true); }},
 				{KeyCode::CtrlD, [&]() {DeleteActive(); }},
 				{KeyCode::ShiftRightArrow, [&]() {
-					if (!ResizeActiveToOnePixel(Direction::Right,true)) {
-						ResizeActiveToOnePixel(Direction::Left, false);
-					} 
+					if (!ResizeActiveByPixels(Direction::Right,1)) {
+						ResizeActiveByPixels(Direction::Left, -1);
+					}
 				}},
 				{KeyCode::ShiftLeftArrow, [&]() {
-					if (!ResizeActiveToOnePixel(Direction::Left,true)) {
-						ResizeActiveToOnePixel(Direction::Right, false);
-					} 
+					if (!ResizeActiveByPixels(Direction::Left,1)) {
+						ResizeActiveByPixels(Direction::Right, -1);
+					}
 				}},
 				{KeyCode::ShiftDownArrow, [&]() {
-					if (!ResizeActiveToOnePixel(Direction::Down,true)) {
-						ResizeActiveToOnePixel(Direction::Up, false);
-					} 
+					if (!ResizeActiveByPixels(Direction::Down, 1)) {
+						ResizeActiveByPixels(Direction::Up, -1);
+					}
 				}},
 				{KeyCode::ShiftUpArrow, [&]() {
-					if (!ResizeActiveToOnePixel(Direction::Up,true)) {
-						ResizeActiveToOnePixel(Direction::Down, false);
-					} 
+					if (!ResizeActiveByPixels(Direction::Up, 1)) {
+						ResizeActiveByPixels(Direction::Down, -1);
+					}
 				}},
 			}
 		);
