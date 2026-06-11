@@ -93,9 +93,9 @@ public:
 		window = newWindow;
 	}
 	//Возвращает список вложенных панелей
-	std::vector<ILayout*> GetPaneList() override;
+	std::vector<ILayout*> GetPaneList() const override;
 	//Возвращает список лейаутов до искомого окна
-	std::vector<ILayout*> GetPath(IWindow* window) override;
+	std::vector<ILayout*> GetPath(IWindow* window) const override;
 
 	//-- from ILayout --
 	// Bind binds

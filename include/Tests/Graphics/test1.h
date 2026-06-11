@@ -120,7 +120,7 @@ private:
 public:
 
 	static void StartTest(int time) {
-		//WindowManager::Init(std::make_unique<TestWindow1>());
+		WindowManager::Init();
 		bool WindowChoise = false;
 		WindowManager::AddWindow("1", std::make_unique<TestWindow1>());
 		WindowManager::AddWindow("2", std::make_unique<TestWindow2>());
@@ -134,58 +134,30 @@ public:
 						WindowManager::CloseWindow();
 					}),
 					Button("Split menu", [&]() {
-						WindowManager::screen.ChangeFocus(1);
+						WindowManager::Screen_ChangeFocus(1);
 						WindowManager::OpenWindow("Split menu");
-						WindowManager::screen.ChangeFocus(-1);
+						WindowManager::Screen_ChangeFocus(-1);
 					}),
 					Button("Open window 1", [&]() {
-						WindowManager::screen.ChangeFocus(1);
+						WindowManager::Screen_ChangeFocus(1);
 						WindowManager::OpenWindow("1");
-						WindowManager::screen.ChangeFocus(-1);
+						WindowManager::Screen_ChangeFocus(-1);
 					}),
 					Button("Open window 2", [&]() {
-						WindowManager::screen.ChangeFocus(1);
+						WindowManager::Screen_ChangeFocus(1);
 						WindowManager::OpenWindow("2");
-						WindowManager::screen.ChangeFocus(-1);
+						WindowManager::Screen_ChangeFocus(-1);
 					}),
 					Button("Open window 3", [&]() {
-						WindowManager::screen.ChangeFocus(1);
+						WindowManager::Screen_ChangeFocus(1);
 						WindowManager::OpenWindow("3");
-						WindowManager::screen.ChangeFocus(-1);
+						WindowManager::Screen_ChangeFocus(-1);
 					}),
 						Button(),
 						Button(),
 						Button(),
 						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
+
 				}
 			)
 		);
@@ -198,31 +170,30 @@ public:
 				WindowManager::CloseWindow();
 				}),
 				Button("Split menu", [&]() {
-				WindowManager::screen.ChangeFocus(1);
+				WindowManager::Screen_ChangeFocus(1);
 				WindowManager::OpenWindow("Split menu");
-				WindowManager::screen.ChangeFocus(-1);
+				WindowManager::Screen_ChangeFocus(-1);
 					}),
 				Button("Open window 1", [&]() {
-				WindowManager::screen.ChangeFocus(1);
+				WindowManager::Screen_ChangeFocus(1);
 				WindowManager::OpenWindow("1");
-				WindowManager::screen.ChangeFocus(-1);
+				WindowManager::Screen_ChangeFocus(-1);
 					}),
 				Button("Open window 2", [&]() {
-				WindowManager::screen.ChangeFocus(1);
+				WindowManager::Screen_ChangeFocus(1);
 				WindowManager::OpenWindow("2");
-				WindowManager::screen.ChangeFocus(-1);
+				WindowManager::Screen_ChangeFocus(-1);
 					}),
 				Button("Open window 3", [&]() {
-				WindowManager::screen.ChangeFocus(1);
+				WindowManager::Screen_ChangeFocus(1);
 				WindowManager::OpenWindow("3");
-				WindowManager::screen.ChangeFocus(-1);
+				WindowManager::Screen_ChangeFocus(-1);
 					}),
 		}
 			)
 		);
 
-		WindowManager::binds.Add(KeyCode::Escape,[&]() {time = 0; });
-		WindowManager::binds.Add(KeyCode::CtrlW,[&]() {WindowChoise = true; });
+		WindowManager::SetDefaultBinds({ {KeyCode::Escape,[&]() {time = 0; }} });
 		//std::unique_ptr buttonList1 =
 
 
@@ -230,7 +201,7 @@ public:
 		for (int i = 0; i < time; i++)
 		{
 			
-			WindowManager::tempBinds.Add({
+			WindowManager::AddBinds({
 				{KeyCode::Digit1, [&]() {WindowManager::OpenWindow("1"); WindowChoise = false; }},
 				{KeyCode::Digit2, [&]() {WindowManager::OpenWindow("2"); WindowChoise = false; }},
 				{KeyCode::Digit3, [&]() {WindowManager::OpenWindow("3"); WindowChoise = false; }},

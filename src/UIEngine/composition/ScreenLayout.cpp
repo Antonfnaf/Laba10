@@ -1,6 +1,110 @@
 #include "UIEngine/composition/ScreenLayout.h"
 
+Bind ScreenLayout::defaultBinds;
 
+
+SplitLayout* ScreenLayout::FindSplitByDirection(const std::vector<ILayout*>& path, Direction dir) const {
+	
+	for (int i = 1; i < path.size(); i++) {
+		SplitLayout* split = dynamic_cast<SplitLayout*>(path[i]);
+		if (!split) continue;
+
+		bool vertical = split->IsVert();
+		bool activeIsFirst = (split->GetFirst() == path[i - 1]);
+
+		if (dir == Direction::Up) {
+			if (vertical && !activeIsFirst) return split;
+		} else if (dir == Direction::Down) {
+			if (vertical && activeIsFirst) return split;
+		} else if (dir == Direction::Left) {
+			if (!vertical && !activeIsFirst) return split;
+		} else if (dir == Direction::Right) {
+			if (!vertical && activeIsFirst) return split;
+		}
+	}
+	return nullptr;
+}
+
+Place ScreenLayout::FindLayoutPlace(ILayout* layoutToFind, ILayout* rootLayout, int rootWidth, int rootHeight)  {
+	if (!rootLayout) return Place(0,0,rootWidth, rootHeight);
+	std::vector<ILayout*> path = rootLayout->GetPath(layoutToFind);
+	if (path.empty()) return Place(0, 0, rootWidth, rootHeight);
+
+	int x = 0, y = 0;
+
+	for (int i = path.size() - 1; i > 0; i--) {
+		SplitLayout* split = dynamic_cast<SplitLayout*>(path[i]);
+		if (!split) continue;
+		if (split->IsVert()) {
+			if (path[i - 1] == split->GetFirst())
+				rootHeight = static_cast<int>(rootHeight * split->GetRatio());
+			else {
+				y+= static_cast<int>(rootHeight * split->GetRatio());
+				rootHeight = rootHeight - static_cast<int>(rootHeight * split->GetRatio());
+			}
+		} else {
+			if (path[i - 1] == split->GetFirst())
+				rootWidth = static_cast<int>(rootWidth * split->GetRatio());
+			else {
+				x+= static_cast<int>(rootWidth * split->GetRatio());
+				rootWidth = rootWidth - static_cast<int>(rootWidth * split->GetRatio());
+			}
+		}
+	}
+	return Place(x, y, rootWidth, rootHeight);
+}
+
+Place ScreenLayout::FindLayoutPlace(ILayout* layout) const {
+	return FindLayoutPlace(layout, root.get(), screenWidth,screenHeight);
+}
+
+ILayout* ScreenLayout::FindLayoutByDirection(Direction dir) {
+	bool searchVert = dir == Direction::Up || dir == Direction::Down;
+	bool searchFirst = dir == Direction::Down || dir == Direction::Right;
+	SplitLayout* splitForSearch = FindSplitByDirection(GetPath(active),dir);
+	if (!splitForSearch) return nullptr;
+	Place searchSplitPlace = FindLayoutPlace(splitForSearch);
+	Place activePlace = FindLayoutPlace(active,splitForSearch,searchSplitPlace.w,searchSplitPlace.h);
+
+	int centerPoint = searchVert ? activePlace.x + activePlace.w * 0.5 : activePlace.y + activePlace.h * 0.5;
+	Place tempPlace = FindLayoutPlace(!searchFirst ? splitForSearch->GetFirst() : splitForSearch->GetSecond(), splitForSearch, searchSplitPlace.w, searchSplitPlace.h);;
+	SplitLayout* tempSplit = dynamic_cast<SplitLayout*>(!searchFirst ? splitForSearch->GetFirst() : splitForSearch->GetSecond());
+	if (!tempSplit) return !searchFirst ? splitForSearch->GetFirst() : splitForSearch->GetSecond();
+	while (tempSplit) {
+		SplitLayout* tSplit;
+		if (tempSplit->IsVert() == searchVert) {
+			tSplit = dynamic_cast<SplitLayout*>(searchFirst ? tempSplit->GetFirst() : tempSplit->GetSecond());
+			if (!tSplit) return searchFirst ? tempSplit->GetFirst() : tempSplit->GetSecond();
+			tempSplit = tSplit;
+			continue;
+		}
+		Place tplace = FindLayoutPlace(tempSplit->GetFirst(),tempSplit,tempPlace.w,tempPlace.h);
+		int Tcoord = searchVert ? tempPlace.x : tempPlace.y;
+		int tcoord = searchVert ? tplace.x : tplace.y;
+		if (Tcoord+tcoord <= centerPoint && Tcoord + tcoord + (searchVert ? tplace.w : tplace.h) > centerPoint) {
+			tSplit = dynamic_cast<SplitLayout*>(tempSplit->GetFirst());
+			if (!tSplit) 
+				return tempSplit->GetFirst();
+			tempSplit = tSplit;
+			tempPlace = tplace;
+			if (searchVert)
+				tempPlace.x += Tcoord;
+			else
+				tempPlace.y += Tcoord;
+			continue;
+		}
+		tSplit = dynamic_cast<SplitLayout*>(tempSplit->GetSecond());
+		tempPlace = FindLayoutPlace(tempSplit->GetSecond(), tempSplit, tempPlace.w, tempPlace.h);
+		if (!tSplit)
+			return tempSplit->GetSecond();
+		tempSplit = tSplit;
+		if (searchVert)
+			tempPlace.x += Tcoord;
+		else
+			tempPlace.y += Tcoord;
+	}
+	return nullptr;
+}
 
 void ScreenLayout::SetFocusPane(ILayout* pane) {
 	active = pane;
@@ -18,6 +122,12 @@ void ScreenLayout::ChangeFocus(int num) {
 	if (newIndex < 0) newIndex += paneList.size();
 	SetFocusPane(paneList[newIndex]);
 }
+void ScreenLayout::ChangeFocus(Direction dir) {
+	ILayout* newActive = FindLayoutByDirection(dir);
+	if (!newActive) return;
+	SetFocusPane(newActive);
+}
+
 void ScreenLayout::FocusNext() {
 	ChangeFocus(1);
 }
@@ -72,6 +182,48 @@ void ScreenLayout::SplitActive(IWindow* window, bool vertical) {
 	}
 }
 
+void ScreenLayout::SwapLayouts(ILayout* a, ILayout* b){
+	if (!a || !b) return;
+	if (!root.get()) return;
+	std::vector<ILayout*> A = root->GetPath(a);
+	if (A.empty() || A.size()<2) return;
+	for (int i = 0; i < A.size(); i++) 
+		if (A[i] == b) return;
+	
+	std::vector<ILayout*> B = root->GetPath(b);
+	if (B.empty() || B.size()<2) return;
+	for (int i = 0; i < B.size(); i++)
+		if (B[i] == a) return;
+
+	std::unique_ptr<ILayout> temp;
+	SplitLayout* parentA = dynamic_cast<SplitLayout*>(A[1]);
+	SplitLayout* parentB = dynamic_cast<SplitLayout*>(B[1]);
+	if (!parentA || !parentB) return;
+	if (parentA->GetFirst() == a) {
+		temp = parentA->ReleaseFirst();
+		if (parentB->GetFirst()==b) {
+			parentA->SetFirst( parentB->ReleaseFirst());
+			parentB->SetFirst(std::move(temp));
+		}else if (parentB->GetSecond() == b) {
+			parentA->SetFirst( parentB->ReleaseSecond());
+			parentB->SetSecond(std::move(temp));
+		}
+	} else if (parentA->GetSecond()==a) {
+		temp = parentA->ReleaseSecond();
+		if (parentB->GetFirst() == b) {
+			parentA->SetSecond(parentB->ReleaseFirst());
+			parentB->SetFirst(std::move(temp));
+		} else if (parentB->GetSecond() == b) {
+			parentA->SetSecond(parentB->ReleaseSecond());
+			parentB->SetSecond(std::move(temp));
+		}
+	}
+}
+
+void ScreenLayout::SwapLayouts(Direction dir) {
+	SwapLayouts(active, FindLayoutByDirection(dir));
+}
+
 void ScreenLayout::DeletePane(IWindow* pane) {
 	if (!root.get()) return;
 	std::vector<ILayout*> path = root->GetPath(pane);
@@ -118,55 +270,6 @@ void ScreenLayout::DeleteActive() {
 	DeletePane(active);
 }
 
-SplitLayout* ScreenLayout::FindSplitByDirection(const std::vector<ILayout*>& path, Direction dir) const {
-	
-	for (int i = 1; i < path.size(); i++) {
-		SplitLayout* split = dynamic_cast<SplitLayout*>(path[i]);
-		if (!split) continue;
-
-		bool vertical = split->IsVert();
-		bool activeIsFirst = (split->GetFirst() == path[i - 1]);
-
-		if (dir == Direction::Up) {
-			if (vertical && !activeIsFirst) return split;
-		} else if (dir == Direction::Down) {
-			if (vertical && activeIsFirst) return split;
-		} else if (dir == Direction::Left) {
-			if (!vertical && !activeIsFirst) return split;
-		} else if (dir == Direction::Right) {
-			if (!vertical && activeIsFirst) return split;
-		}
-	}
-	return nullptr;
-}
-
-std::pair<int, int> ScreenLayout::FindLayoutSize(ILayout* layoutToFind, ILayout* rootLayout, int rootWidth, int rootHeight) {
-	if (!rootLayout) return std::make_pair(rootWidth, rootHeight);
-	std::vector<ILayout*> path = rootLayout->GetPath(layoutToFind);
-	if (path.empty()) return std::make_pair(rootWidth, rootHeight);
-
-	for (int i = path.size() - 1; i > 0; i--) {
-		SplitLayout* split = dynamic_cast<SplitLayout*>(path[i]);
-		if (!split) continue;
-		if (split->IsVert()) {
-			if (path[i - 1] == split->GetFirst())
-				rootHeight = static_cast<int>(rootHeight * split->GetRatio());
-			else
-				rootHeight = rootHeight - static_cast<int>(rootHeight * split->GetRatio());
-		} else {
-			if (path[i - 1] == split->GetFirst())
-				rootWidth = static_cast<int>(rootWidth * split->GetRatio());
-			else
-				rootWidth = rootWidth - static_cast<int>(rootWidth * split->GetRatio());
-
-		}
-	}
-	return std::make_pair(rootWidth, rootHeight);
-}
-
-std::pair<int, int> ScreenLayout::FindLayoutSize(ILayout* layout) const {
-	return FindLayoutSize(layout, root.get(), screenWidth,screenHeight);
-}
 
 void ScreenLayout::SetSplitRatio(SplitLayout* split, float newRatio) {
 	if (!split) return;
@@ -178,12 +281,12 @@ void ScreenLayout::ChangeSplitRatio(SplitLayout* split, float delta) {
 }
 
 void ScreenLayout::ChangeSplitByPixels(SplitLayout* split, int delta) {
-	std::pair<int, int> size = FindLayoutSize(split);
+	Place size = FindLayoutPlace(split);
 	int totalSize;
 	if (split->IsVert()) {
-		totalSize = size.second;
+		totalSize = size.h;
 	} else {
-		totalSize = size.first;
+		totalSize = size.w;
 	}
 	float deltaRatio = static_cast<float>(delta) / static_cast<float>(totalSize);
 	ChangeSplitRatio(split, deltaRatio);
@@ -209,45 +312,12 @@ bool ScreenLayout::ResizeActiveByPixels(Direction direction, int delta) {
 }
 
 
-//void ScreenLayout::SwapLayouts(ILayout* a, ILayout* b) {
-//
-//} 
 
 void ScreenLayout::UpdateBinds() {
 	binds.ClearAll();
 	if (root.get())
 		binds.Add(root->GetBinds(active));
 	if(defaultBindsIsOn)
-		binds.Add(
-			{
-				{KeyCode::CtrlL, [&]() {FocusNext(); }},
-				{KeyCode::AltRightArrow, [&]() {FocusNext(); }},
-				{KeyCode::CtrlH, [&]() {FocusPrev(); }},
-				{KeyCode::AltLeftArrow, [&]() {FocusPrev(); }},
-				{KeyCode::CtrlRightArrow, [&]() {SplitActive(new NullWindow(),false); }},
-				{KeyCode::CtrlDownArrow, [&]() {SplitActive(new NullWindow(),true); }},
-				{KeyCode::CtrlD, [&]() {DeleteActive(); }},
-				{KeyCode::ShiftRightArrow, [&]() {
-					if (!ResizeActiveByPixels(Direction::Right,1)) {
-						ResizeActiveByPixels(Direction::Left, -1);
-					}
-				}},
-				{KeyCode::ShiftLeftArrow, [&]() {
-					if (!ResizeActiveByPixels(Direction::Left,1)) {
-						ResizeActiveByPixels(Direction::Right, -1);
-					}
-				}},
-				{KeyCode::ShiftDownArrow, [&]() {
-					if (!ResizeActiveByPixels(Direction::Down, 1)) {
-						ResizeActiveByPixels(Direction::Up, -1);
-					}
-				}},
-				{KeyCode::ShiftUpArrow, [&]() {
-					if (!ResizeActiveByPixels(Direction::Up, 1)) {
-						ResizeActiveByPixels(Direction::Down, -1);
-					}
-				}},
-			}
-		);
+		binds.Add(defaultBinds);
 	binds.Add(userBinds);
 }

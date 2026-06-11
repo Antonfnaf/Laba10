@@ -23,15 +23,15 @@ std::vector<std::vector<Pixel>> PaneLayout::GetFrameLO(int width, int height, IW
 	return border.PasteInFrame(window->GetFrame(width - thickness*2, height - thickness*2));
 }
 
-std::vector<ILayout*> PaneLayout::GetPaneList() {
-	return { this };
+std::vector<ILayout*> PaneLayout::GetPaneList() const  {
+	return { (ILayout*)this };
 }
-std::vector<ILayout*> PaneLayout::GetPath(IWindow* window) {
+std::vector<ILayout*> PaneLayout::GetPath(IWindow* window) const  {
 	if (Compare(window)) {
-		return { this };
+		return { (ILayout*)this };
 	}
 	if (this == window) {
-		return { this };
+		return { (ILayout*)this };
 	}
 	return {};
 }

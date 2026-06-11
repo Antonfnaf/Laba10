@@ -26,9 +26,9 @@ protected:
 
 public: 
 	//Возвращает список вложенных панелей
-	virtual std::vector<ILayout*> GetPaneList() = 0;
+	virtual std::vector<ILayout*> GetPaneList() const = 0;
 	//Возвращает список лейаутов до искомого окна
-	virtual std::vector<ILayout*> GetPath(IWindow* window) = 0;
+	virtual std::vector<ILayout*> GetPath(IWindow* window) const = 0;
 	//Безопасное получние действий
 	std::map<KeyCode, std::function<void()>> GetBinds() {
 		binds.ClearAll();

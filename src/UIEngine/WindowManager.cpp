@@ -5,3 +5,4 @@ std::vector<std::unique_ptr<IWindow>> WindowManager::windows = std::vector<std::
 std::map<std::string, IWindow*> WindowManager::bookmarks = std::map<std::string, IWindow*>();
 Bind WindowManager::binds;
 Bind WindowManager::tempBinds;
+

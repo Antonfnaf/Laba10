@@ -7,20 +7,25 @@
 #include "UIEngine/composition/PaneLayout.h"
 #include "UIEngine/composition/SplitLayout.h"
 
+struct Place
+{
+	Place(int x = 0, int y = 0, int w = 0, int h = 0) : x(x), y(y), w(w), h(h) {}
+	int x, y, w, h;
+};
 
 class ScreenLayout final : public ILayout {
 	std::unique_ptr<ILayout> root;
 	
-	IWindow* active;
+	ILayout* active;
 	int screenWidth;
 	int screenHeight;
 
-
+	static Bind defaultBinds;
 	Bind userBinds;
 	bool defaultBindsIsOn = true;
 
 	//Дает размеры искомого лейаута внутри корня
-	std::pair<int, int> FindLayoutSize(ILayout* layout) const ;
+	Place FindLayoutPlace(ILayout* layout) const ;
 	SplitLayout* FindSplitByDirection(const std::vector<ILayout*>& path, Direction dir) const;
 	
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height, IWindow* active) const override {
@@ -31,8 +36,6 @@ class ScreenLayout final : public ILayout {
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const override {
 		return GetFrameLO(width, height, active);
 	}
-
-	//void SwapLayouts(ILayout* a, ILayout* b);
 	//обновление списка клавиш
 	void UpdateBinds();
 	void UpdateBinds(IWindow* window) { UpdateBinds(); }
@@ -41,7 +44,22 @@ public:
 	ScreenLayout(std::unique_ptr<ILayout> layout) : root(std::move(layout)), active((!root->GetPaneList().empty()) ? root->GetPaneList()[0] : nullptr) {}
 	
 	//Дает размеры искомого лейаута внутри выбранного лейаута
-	static std::pair<int, int> FindLayoutSize(ILayout* layoutToFind, ILayout* rootLayout, int rootWidth,int rootHeight);
+	static Place FindLayoutPlace(ILayout* layoutToFind, ILayout* rootLayout, int rootWidth,int rootHeight) ;
+	//Дает соседний активному лейаут в заданном направлении
+	ILayout* FindLayoutByDirection(Direction dir);
+	//Дает панель окна
+	PaneLayout* GetPane(IWindow* window) const  {
+		if (!root.get()) return nullptr;
+		std::vector<ILayout*> path = root->GetPath(window);
+		if (path.empty()) return nullptr;
+		PaneLayout* pane = dynamic_cast<PaneLayout*>(path[0]);
+		if (!pane) return nullptr;
+		return pane;
+	}
+	//Дает список окон
+	std::vector<ILayout*> GetPaneList() const { return root->GetPaneList(); }
+	//Дает список лейаутов на пути к окну, нулевой элемент - окно
+	std::vector<ILayout*> GetPath(IWindow* window) const override { return root->GetPath(window); }
 
 	//позволяет получить клавиши скрина и активного окна
 	std::map<KeyCode, std::function<void()>> GetBinds() {
@@ -57,10 +75,12 @@ public:
 		return GetFrame(width, height, active);
 	};
 
-
+	//изменение фокуса на определенную панель
 	void SetFocusPane(ILayout* pane);
 	//изменение фокуса на определенное количество панелей
 	void ChangeFocus(int num);
+	//изменение фокуса на определенному направлению
+	void ChangeFocus(Direction dir);
 	//Изменение фокуса на следующую панель
 	void FocusNext();
 	//Изменение фокуса на предыдущую панель
@@ -74,33 +94,29 @@ public:
 	void SetActive(IWindow* window);
 	//Позволяет сделать сплит с пустым или выбранным окном
 	void SplitActive(IWindow* window, bool vertical = false);
+	//Меняет два лейаута местами.
+	void SwapLayouts(ILayout* a, ILayout* b);
+	void SwapLayouts(Direction dir);
 
 	//Позволяет изменить долю активного окна по выбранному направлению
 	void SetSplitRatio(SplitLayout* split, float newRatio);
-	//Позволяет изменить долю активного окна на количество пикселей по выбранному направлению
+	//Позволяет изменить долю активного окна на количество процентов по выбранному направлению
 	void ChangeSplitRatio(SplitLayout* split, float delta);
+	//Позволяет изменить долю активного окна на количество пикселей по выбранному направлению
 	void ChangeSplitByPixels(SplitLayout* split, int delta);
 	//Позволяет изменить активное окно на один пиксель по выбранному направлению в большую сторону или меньшую
 	bool ResizeActiveByPixels(Direction direction, int delta);
 
+	//Определяет дефолтные действия для скрина.
+	static void SetDefaultBinds(std::map<KeyCode, std::function<void()>> binds) { defaultBinds.ClearAll(); defaultBinds.Add(binds); }
+	//Позволяет добавить кастомное действие к клавише для скрина
+	void AddUserBinds(KeyCode key, std::function<void()> action) { userBinds.Add(key, action); }
+	//позволяет добавить несколько кастомных действий к клавишам для скрина
+	void AddUserBinds(std::map<KeyCode, std::function<void()>> actions) { userBinds.Add(actions); }
+	
 	void DefaultBindsDisable() { defaultBindsIsOn = false; }
 	void DefaultBindsEnable() { defaultBindsIsOn = true; }
 
-	void AddUserBinds(KeyCode key, std::function<void()> action) { userBinds.Add(key, action); }
-	void AddUserBinds(std::map<KeyCode, std::function<void()>> actions) { userBinds.Add(actions); }
 
-	//Дает панель окна
-	PaneLayout* GetPane(IWindow* window) {
-		if (!root.get()) return nullptr;
-		std::vector<ILayout*> path = root->GetPath(window);
-		if (path.empty()) return nullptr;
-		PaneLayout* pane = dynamic_cast<PaneLayout*>(path[0]);
-		if (!pane) return nullptr;
-		return pane;
-	}
-	//Дает список окон
-	std::vector<ILayout*> GetPaneList() { return root->GetPaneList(); }
-	//Дает список лейаутов на пути к окну, нулевой элемент - окно
-	std::vector<ILayout*> GetPath(IWindow* window) override { return root->GetPath(window); }
 
 };
