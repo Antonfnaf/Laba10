@@ -58,13 +58,13 @@ Place ScreenLayout::FindLayoutPlace(ILayout* layout) const {
 	return FindLayoutPlace(layout, root.get(), screenWidth,screenHeight);
 }
 
-ILayout* ScreenLayout::FindLayoutByDirection(Direction dir) {
+ILayout* ScreenLayout::FindLayoutByDirection(ILayout* layoutFrom,Direction dir) const {
 	bool searchVert = dir == Direction::Up || dir == Direction::Down;
 	bool searchFirst = dir == Direction::Down || dir == Direction::Right;
-	SplitLayout* splitForSearch = FindSplitByDirection(GetPath(active),dir);
+	SplitLayout* splitForSearch = FindSplitByDirection(GetPath(layoutFrom),dir);
 	if (!splitForSearch) return nullptr;
 	Place searchSplitPlace = FindLayoutPlace(splitForSearch);
-	Place activePlace = FindLayoutPlace(active,splitForSearch,searchSplitPlace.w,searchSplitPlace.h);
+	Place activePlace = FindLayoutPlace(layoutFrom,splitForSearch,searchSplitPlace.w,searchSplitPlace.h);
 
 	int centerPoint = searchVert ? activePlace.x + activePlace.w * 0.5 : activePlace.y + activePlace.h * 0.5;
 	Place tempPlace = FindLayoutPlace(!searchFirst ? splitForSearch->GetFirst() : splitForSearch->GetSecond(), splitForSearch, searchSplitPlace.w, searchSplitPlace.h);;
@@ -105,6 +105,9 @@ ILayout* ScreenLayout::FindLayoutByDirection(Direction dir) {
 	}
 	return nullptr;
 }
+ILayout* ScreenLayout::FindLayoutByDirection(Direction dir) const {
+	return FindLayoutByDirection(active, dir);
+}
 
 void ScreenLayout::SetFocusPane(ILayout* pane) {
 	active = pane;
@@ -135,13 +138,13 @@ void ScreenLayout::FocusPrev() {
 	ChangeFocus(-1);
 }
 
-void ScreenLayout::SetActive(IWindow* window) {
+void ScreenLayout::SetContent(ILayout* target, IWindow* window) {
 	if (!root.get()) {
 		root = std::make_unique<PaneLayout>(window);
 		SetFocusPane(root.get());
 		return;
 	}
-	std::vector<ILayout*> path = root->GetPath(active);
+	std::vector<ILayout*> path = root->GetPath(target);
 	if (path.empty()) return;
 
 	PaneLayout* pane = dynamic_cast<PaneLayout*>(path[0]);
@@ -150,14 +153,17 @@ void ScreenLayout::SetActive(IWindow* window) {
 		SetFocusPane(pane);
 	}
 }
+void ScreenLayout::SetActive(IWindow* window) {
+	SetContent(active, window);
+}
 
-void ScreenLayout::SplitActive(IWindow* window, bool vertical) {
+void ScreenLayout::Split(ILayout* targetLayout, IWindow* window, bool vertical) {
 	if (!root.get()) { 
 		root = std::make_unique<PaneLayout>(window);
 		SetFocusPane(root.get());
 		return;
 	}
-	std::vector<ILayout*> path = root->GetPath(active);
+	std::vector<ILayout*> path = root->GetPath(targetLayout);
 	if (path.empty()) return;
 
 	if (path.size() == 1) {
@@ -180,6 +186,9 @@ void ScreenLayout::SplitActive(IWindow* window, bool vertical) {
 			parent->SetSecond(std::make_unique<SplitLayout>(std::move(first), std::move(second), 0.5, vertical));
 		}
 	}
+}
+void ScreenLayout::SplitActive(IWindow* window, bool vertical) {
+	Split(active, window, vertical);
 }
 
 void ScreenLayout::SwapLayouts(ILayout* a, ILayout* b){
@@ -219,9 +228,11 @@ void ScreenLayout::SwapLayouts(ILayout* a, ILayout* b){
 		}
 	}
 }
-
+void ScreenLayout::SwapLayouts(ILayout* layoutFrom, Direction dir) {
+	SwapLayouts(layoutFrom, FindLayoutByDirection(dir));
+}
 void ScreenLayout::SwapLayouts(Direction dir) {
-	SwapLayouts(active, FindLayoutByDirection(dir));
+	SwapLayouts(active, dir);
 }
 
 void ScreenLayout::DeletePane(IWindow* pane) {
@@ -292,11 +303,10 @@ void ScreenLayout::ChangeSplitByPixels(SplitLayout* split, int delta) {
 	ChangeSplitRatio(split, deltaRatio);
 }
 
-
-bool ScreenLayout::ResizeActiveByPixels(Direction direction, int delta) {
+bool ScreenLayout::ResizeActiveByPixels(ILayout* layoutfrom, Direction direction, int delta) {
 	// 1. Находим путь к активному окну
 	if (!root.get()) return false;
-	std::vector<ILayout*> path = root->GetPath(active);
+	std::vector<ILayout*> path = root->GetPath(layoutfrom);
 	if (path.size() <2) return false;
 
 	// 2. Находим сплит, который нужно изменять
@@ -309,6 +319,9 @@ bool ScreenLayout::ResizeActiveByPixels(Direction direction, int delta) {
 	int finaleDelta = isFirst ? delta : delta * -1;
 	ChangeSplitByPixels(split, finaleDelta);
 	return true;
+}
+bool ScreenLayout::ResizeActiveByPixels(Direction direction, int delta) {
+	return ResizeActiveByPixels(active, direction, delta);
 }
 
 

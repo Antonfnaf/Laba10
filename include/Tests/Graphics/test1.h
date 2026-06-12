@@ -153,10 +153,10 @@ public:
 						WindowManager::OpenWindow("3");
 						WindowManager::Screen_ChangeFocus(-1);
 					}),
-						Button(),
-						Button(),
-						Button(),
-						Button(),
+					Button(),
+					Button(),
+					Button(),
+					Button(),
 
 				}
 			)

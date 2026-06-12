@@ -29,9 +29,7 @@ class ScreenLayout final : public ILayout {
 	SplitLayout* FindSplitByDirection(const std::vector<ILayout*>& path, Direction dir) const;
 	
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height, IWindow* active) const override {
-		if(root.get())
-			return root->GetFrame(width, height, active);
-		return {};
+			return root ? root->GetFrame(width, height, active) : std::vector<std::vector<Pixel>>();
 	}
 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const override {
 		return GetFrameLO(width, height, active);
@@ -45,8 +43,14 @@ public:
 	
 	//Дает размеры искомого лейаута внутри выбранного лейаута
 	static Place FindLayoutPlace(ILayout* layoutToFind, ILayout* rootLayout, int rootWidth,int rootHeight) ;
-	//Дает соседний активному лейаут в заданном направлении
-	ILayout* FindLayoutByDirection(Direction dir);
+	// Возвращает окно/лейаут в направлении dir от выбранного окна.
+	// Алгоритм: находим сплит, разделяющий выбранное окно и целевую область,
+	// затем спускаемся по дереву в нужную сторону, используя центральную точку выбранного окна
+	// для выбора правильной ветки (чтобы переходить в "логичное" окно, например,
+	// из нижней левой панели в нижнюю правую, а не в верхнюю правую).
+	ILayout* FindLayoutByDirection(ILayout* layoutFrom, Direction dir) const;
+	// Возвращает окно/лейаут в направлении dir от активного окна.
+	ILayout* FindLayoutByDirection(Direction dir) const;
 	//Дает панель окна
 	PaneLayout* GetPane(IWindow* window) const  {
 		if (!root.get()) return nullptr;
@@ -57,9 +61,9 @@ public:
 		return pane;
 	}
 	//Дает список окон
-	std::vector<ILayout*> GetPaneList() const { return root->GetPaneList(); }
+	std::vector<ILayout*> GetPaneList() const { return root ? root->GetPaneList() : std::vector<ILayout*>(); }
 	//Дает список лейаутов на пути к окну, нулевой элемент - окно
-	std::vector<ILayout*> GetPath(IWindow* window) const override { return root->GetPath(window); }
+	std::vector<ILayout*> GetPath(IWindow* window) const override { return root ? root->GetPath(window) : std::vector<ILayout*>(); }
 
 	//позволяет получить клавиши скрина и активного окна
 	std::map<KeyCode, std::function<void()>> GetBinds() {
@@ -90,12 +94,17 @@ public:
 	void DeletePane(IWindow* pane);
 	//Удаление активной панели
 	void DeleteActive();
+	//Меняет содержимое выбранного окна
+	void SetContent(ILayout* target, IWindow* window);
 	//Меняет содержимое активного окна
 	void SetActive(IWindow* window);
+	//Позволяет сделать сплит с пустым или выбранным окном
+	void Split(ILayout* targetLayout, IWindow* window, bool vertical = false);
 	//Позволяет сделать сплит с пустым или выбранным окном
 	void SplitActive(IWindow* window, bool vertical = false);
 	//Меняет два лейаута местами.
 	void SwapLayouts(ILayout* a, ILayout* b);
+	void SwapLayouts(ILayout* layoutFrom, Direction dir);
 	void SwapLayouts(Direction dir);
 
 	//Позволяет изменить долю активного окна по выбранному направлению
@@ -104,6 +113,8 @@ public:
 	void ChangeSplitRatio(SplitLayout* split, float delta);
 	//Позволяет изменить долю активного окна на количество пикселей по выбранному направлению
 	void ChangeSplitByPixels(SplitLayout* split, int delta);
+	//Позволяет изменить выбранное окно на один пиксель по выбранному направлению в большую сторону или меньшую
+	bool ResizeActiveByPixels(ILayout* layoutfrom, Direction direction, int delta);
 	//Позволяет изменить активное окно на один пиксель по выбранному направлению в большую сторону или меньшую
 	bool ResizeActiveByPixels(Direction direction, int delta);
 
