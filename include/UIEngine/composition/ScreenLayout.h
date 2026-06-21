@@ -6,6 +6,8 @@
 #include "UIEngine/composition/ILayout.h"
 #include "UIEngine/composition/PaneLayout.h"
 #include "UIEngine/composition/SplitLayout.h"
+#include "UIEngine/process/IAnimation.h"
+
 
 struct Place
 {
@@ -15,7 +17,10 @@ struct Place
 
 class ScreenLayout final : public ILayout {
 	std::unique_ptr<ILayout> root;
-	
+
+	std::function<void(std::unique_ptr<IProcess>)> addProcess;
+	std::vector<IAnimation*> animations;
+
 	ILayout* active;
 	int screenWidth;
 	int screenHeight;
@@ -39,8 +44,13 @@ class ScreenLayout final : public ILayout {
 	void UpdateBinds(IWindow* window) { UpdateBinds(); }
 
 public:
-	ScreenLayout(std::unique_ptr<ILayout> layout) : root(std::move(layout)), active((!root->GetPaneList().empty()) ? root->GetPaneList()[0] : nullptr) {}
-	
+	ScreenLayout(std::unique_ptr<ILayout> root, std::function<void(std::unique_ptr<IProcess>)> addProcessFn) : root(std::move(root)), active((!this->root->GetPaneList().empty()) ? this->root->GetPaneList()[0] : nullptr), addProcess(addProcessFn) {}
+	void addAnimation(std::unique_ptr<IAnimation> anim) {
+		if (addProcess) {
+			animations.push_back(anim.get());
+			addProcess(std::move(anim));
+		}
+	}
 	//Дает размеры искомого лейаута внутри выбранного лейаута
 	static Place FindLayoutPlace(ILayout* layoutToFind, ILayout* rootLayout, int rootWidth,int rootHeight) ;
 	// Возвращает окно/лейаут в направлении dir от выбранного окна.

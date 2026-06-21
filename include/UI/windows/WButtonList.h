@@ -31,6 +31,12 @@ public:
 	void Do() { button[selIndex](); }
 };
 
+
+
+
+
+
+
 WButtonList::WButtonList(std::string name, std::vector<Button> button) : head(Converter::ParseToPic(name)[0]), button(button) {
 	binds.Add({
 		{KeyCode::UpArrow, [&]()  {SetSelect(-1); }},
@@ -38,7 +44,6 @@ WButtonList::WButtonList(std::string name, std::vector<Button> button) : head(Co
 		{KeyCode::Enter, [&]() { Do(); }},
 		});
 }
-
 WButtonList::WButtonList(std::vector<Pixel> name, std::vector<Button> button) : head(name), button(button) {
 	binds.Add({
 {KeyCode::UpArrow, [&]() { SetSelect(-1); }},

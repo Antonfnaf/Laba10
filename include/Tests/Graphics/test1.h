@@ -8,6 +8,7 @@
 #include "UIEngine/input/InputManager.h"
 
 #include "UI/windows/WButtonList.h"
+#include "UI/windows/WTerminal.h"
 
 
 
@@ -193,6 +194,7 @@ public:
 			)
 		);
 
+
 		WindowManager::SetDefaultBinds({ {KeyCode::Escape,[&]() {time = 0; }} });
 		//std::unique_ptr buttonList1 =
 
@@ -209,8 +211,7 @@ public:
 				});
 
 
-			WindowManager::UpdateActions();
-			WindowManager::UpdateCadre();
+			WindowManager::Update();
 		}
 	}
 };

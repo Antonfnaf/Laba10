@@ -1,17 +1,16 @@
-#include "Core/enums.h"
-#include "Core/Pixel.h"
-
-//#include "UIEngine/composition/OldWindowCompositor.h"
+#pragma once
 #include "UIEngine/composition/ScreenLayout.h"
-#include "UIEngine/rendering/Renderer.h"
+#include "UIEngine/process/ProcessManager.h"
 #include "UIEngine/input/InputManager.h"
+#include "UIEngine/rendering/Renderer.h"
 
 
 
 class WindowManager {
 private:
-	static std::unique_ptr<IWindow> nullwin;
 	static ScreenLayout screen;
+	static ProcessManager processManager;
+	static std::unique_ptr<IWindow> nullwin;
 	static std::vector<std::unique_ptr<IWindow>> windows;
 	static std::map<std::string, IWindow*> bookmarks;
 	static Bind binds;
@@ -41,8 +40,8 @@ public:
 					}
 				}},
 				{KeyCode::ShiftLeftArrow, [&]() {
-					if (!Screen_ResizeActiveByPixels(Direction::Left,1)) {
-						Screen_ResizeActiveByPixels(Direction::Right, -1);
+					if (!Screen_ResizeActiveByPixels(Direction::Right, -1)) {
+						Screen_ResizeActiveByPixels(Direction::Left, 1);
 					}
 				}},
 				{KeyCode::ShiftDownArrow, [&]() {
@@ -51,8 +50,8 @@ public:
 					}
 				}},
 				{KeyCode::ShiftUpArrow, [&]() {
-					if (!Screen_ResizeActiveByPixels(Direction::Up, 1)) {
-						Screen_ResizeActiveByPixels(Direction::Down, -1);
+					if (!Screen_ResizeActiveByPixels(Direction::Down, -1)) {
+						Screen_ResizeActiveByPixels(Direction::Up, 1);
 					}
 				}},
 			});
@@ -157,8 +156,12 @@ public:
 	static void AddBinds(KeyCode key, std::function<void()> action) { tempBinds.Add(key, action); }
 	static void AddBinds(std::map<KeyCode, std::function<void()>> actions) { tempBinds.Add(actions); }
 
-
-	//
+	//============== Update methods ==============
+	//Обновление процессов
+	static void UpdateProcesses() {
+		processManager.Update();
+	}
+	//Обновление действий для скрина и активного окна, а также выполнение действия по клавише.
 	static void UpdateActions() {
 		InputManager::ClearBinds();
 		InputManager::Bind(GetBinds());
@@ -169,5 +172,10 @@ public:
 	static void UpdateCadre() {
 		Renderer::UpdateCadre(screen.GetScreen(ConsoleTools::GetConsoleWidth(), ConsoleTools::GetConsoleHeight()));
 	}
-	
+	//Обновление всех компонентов менеджера окон
+	static void Update() {
+		UpdateProcesses();
+		UpdateActions();
+		UpdateCadre();
+	}
 };
