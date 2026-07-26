@@ -1,5 +1,10 @@
 #include "UIEngine/input/InputManager.h"
-
+/////////////////
+//#include <termios.h>
+//#include <unistd.h>
+//#include <fcntl.h>
+//#include <iostream>
+/////////////////
 #ifdef _WIN32
 #include <conio.h>
 #include <windows.h>
@@ -11,149 +16,111 @@
 
 Bind InputManager::actions;
 
+////////////////////////////////////
+KeyCode parseChar(unsigned char c) {
+    // Ctrl+буквы (0x01-0x1A) - возвращаем как Ctrl + буква
+    // Но для этого нам нужно вернуть ДВЕ клавиши: LeftCtrl и букву
+    // Так как функция возвращает одну клавишу, мы будем обрабатывать это 
+    // в главной функции getKeyCodes()
+    if (c >= 0x01 && c <= 0x1A) {
+        // Это Ctrl+буква, но мы не можем вернуть две клавиши из одной функции
+        // Поэтому в parseChar мы возвращаем специальное значение,
+        // а в getKeyCodes обрабатываем это как Ctrl + буква
+        return static_cast<KeyCode>(0xF000 + c);  // Временный маркер
+    }
 
-void InputManager::Init() {}//for linux
+    // Управляющие символы
+    if (c == 0x1B) return KeyCode::Escape;
+    if (c == 0x0D) return KeyCode::Enter;
+    if (c == 0x09) return KeyCode::Tab;
+    if (c == 0x08) return KeyCode::Backspace;
+    if (c == 0x7F) return KeyCode::Delete;
 
-void InputManager::Shutdown() {}//for linux
+    // Печатные символы (ASCII)
+    if (c >= 0x20 && c <= 0x7E) {
+        return static_cast<KeyCode>(c);
+    }
 
-
-
-
-//bool InputManager::initialized = false;
-//void InputManager::initInput(){
-//    if (!initialized) {
-//#ifdef _WIN32
-//        // Windows PDCurses
-//        initscr();
-//        // Сразу отключаем вывод на экран
-//        leaveok(stdscr, TRUE);
-//        scrollok(stdscr, FALSE);
-//#else
-//        // Linux - создаём отдельный поток для ввода
-//        SCREEN* scr = newterm(NULL, fopen("/dev/tty", "w+"), stdin);
-//#endif
-//        cbreak();
-//        noecho();
-//        nodelay(stdscr, TRUE);
-//        keypad(stdscr, TRUE);
+    return KeyCode::None;
+}
+//std::vector<KeyCode> getKeyCodes() {
+//    std::vector<KeyCode> result;
+//    std::unordered_set<KeyCode> unique_keys;
 //
-//#ifndef _WIN32
-//        // 6. (Только Linux/macOS) Разрешаем обработку 8-го бита (Meta/Alt).
-//        //    Позволяет ncurses устанавливать флаг A_ALT при нажатии Alt+клавиша.
-//        //    На Windows/PDCurses это не требуется (там Alt определяется нативно).
-//        meta(stdscr, TRUE);
+//    // Читаем все доступные данные из буфера
+//    char buffer[1024];
+//    int bytes = 0;
 //
-//        // 7. Убираем задержку распознавания ESC-последовательностей.
-//        //    По умолчанию ncurses ждёт 1 сек, чтобы отличить одиночный Escape от Alt+Key.
-//        //    В nodelay-режиме это ломает отзывчивость. Ставим 0 для мгновенной реакции.
-//        setenv("ESCDELAY", "0", 1);
-//#endif
-//        // 8. Скрываем курсор. Опционально, но рекомендуется для TUI-приложений,
-//        //    чтобы он не мешал отрисовке и не мигал при каждом getch().
-//        curs_set(0);
-//        initialized = true;
+//    while ((bytes = read(STDIN_FILENO, buffer, sizeof(buffer))) > 0) {
+//        int pos = 0;
+//        while (pos < bytes) {
+//            unsigned char c = static_cast<unsigned char>(buffer[pos]);
+//
+//            // Обработка ESC-последовательностей
+//            if (c == 0x1B) {
+//                std::string seq = parseEscapeSequence(buffer, bytes, pos);
+//
+//                // Проверяем, не Alt+буква ли это (ESC + буква)
+//                if (seq.size() == 2 && seq[0] == 0x1B) {
+//                    char letter = seq[1];
+//                    if ((letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z')) {
+//                        // Alt+буква - добавляем обе клавиши
+//                        unique_keys.insert(KeyCode::LeftAlt);
+//                        unique_keys.insert(static_cast<KeyCode>(letter));
+//                    }
+//                } else {
+//                    KeyCode code = parseEscSequence(seq);
+//                    if (code != KeyCode::None) {
+//                        unique_keys.insert(code);
+//                    }
+//                }
+//                pos += seq.length();
+//            } else {
+//                // Обычный символ
+//                if (c >= 0x01 && c <= 0x1A) {
+//                    // Ctrl+буква - добавляем Ctrl и букву
+//                    unique_keys.insert(KeyCode::LeftCtrl);
+//
+//                    // Преобразуем 0x01->'A', 0x02->'B', ..., 0x1A->'Z'
+//                    char letter = 'A' + (c - 0x01);
+//                    unique_keys.insert(static_cast<KeyCode>(letter));
+//                } else {
+//                    KeyCode code = parseChar(c);
+//                    if (code != KeyCode::None) {
+//                        unique_keys.insert(code);
+//                    }
+//                }
+//                pos++;
+//            }
+//        }
 //    }
-//}
-//void InputManager::shutdownInput() {
-//    curs_set(1); // Возвращаем курсор
-//    endwin();    // Освобождаем ресурсы curses
-//}
-//KeyCode InputManager::getKeyCode() {
-//    Init();
-//    std::lock_guard<std::mutex> lock(queueMutex);
-//    if (keyQueue.empty()) {
-//        return KeyCode::None;
-//    }
+//    
+//    // Добавляем модификаторы, которые удерживаются
+//    auto current_time = std::chrono::steady_clock::now();
+//    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+//        current_time - last_read
+//    ).count();
 //
-//    int raw = static_cast<int>(keyQueue.front());
-//    keyQueue.pop();
-//
-//
-//    if (raw == ERR) return KeyCode::None; // Ничего не нажато
-//
-//    bool alt = false, ctrl = false, shift = false;
-//    // Извлекаем битовые флаги модификаторов
-//#ifdef _WIN32
-//// PDCurses возвращает состояние модификаторов отдельным вызовом
-//    int mods = PDC_get_key_modifiers();
-//    alt = (mods & PDC_KEY_MODIFIER_ALT) != 0;
-//    ctrl = (mods & PDC_KEY_MODIFIER_CONTROL) != 0;
-//    shift = (mods & PDC_KEY_MODIFIER_SHIFT) != 0;
-//#else
-//    // NCurses упаковывает модификаторы прямо в возвращаемое значение
-//    alt = (raw & A_ALT) != 0;
-//    ctrl = (raw & A_CTRL) != 0;
-//    shift = (raw & A_SHIFT) != 0;
-//#endif
-//
-//    // Отсекаем флаги, оставляя только "чистый" код символа/клавиши
-//    int key = raw & A_CHARTEXT;
-//
-//    // =========================================================================
-//    // БЛОК 1: Расширенные клавиши (стрелки, F-клавиши, Home, PgUp и т.д.)
-//    // В curses их коды всегда > 127
-//    // =========================================================================
-//    if (key > 127) {
-//        switch (key) {
-//        case KEY_UP:    return alt ? KeyCode::AltUpArrow : ctrl ? KeyCode::CtrlUpArrow : shift ? KeyCode::ShiftUpArrow : KeyCode::UpArrow;
-//        case KEY_DOWN:  return alt ? KeyCode::AltDownArrow : ctrl ? KeyCode::CtrlDownArrow : shift ? KeyCode::ShiftDownArrow : KeyCode::DownArrow;
-//        case KEY_LEFT:  return alt ? KeyCode::AltLeftArrow : ctrl ? KeyCode::CtrlLeftArrow : shift ? KeyCode::ShiftLeftArrow : KeyCode::LeftArrow;
-//        case KEY_RIGHT: return alt ? KeyCode::AltRightArrow : ctrl ? KeyCode::CtrlRightArrow : shift ? KeyCode::ShiftRightArrow : KeyCode::RightArrow;
-//
-//        case KEY_HOME:  return alt ? KeyCode::AltHome : ctrl ? KeyCode::CtrlHome : shift ? KeyCode::ShiftHome : KeyCode::Home;
-//        case KEY_END:   return alt ? KeyCode::AltEnd : ctrl ? KeyCode::CtrlEnd : shift ? KeyCode::ShiftEnd : KeyCode::End;
-//        case KEY_PPAGE: return alt ? KeyCode::AltPgUp : ctrl ? KeyCode::CtrlPgUp : shift ? KeyCode::ShiftPgUp : KeyCode::PgUp;
-//        case KEY_NPAGE: return alt ? KeyCode::AltPgDn : ctrl ? KeyCode::CtrlPgDn : shift ? KeyCode::ShiftPgDn : KeyCode::PgDn;
-//
-//        case KEY_IC:    return ctrl ? KeyCode::CtrlInsert : shift ? KeyCode::ShiftInsert : KeyCode::Insert; // Alt+Insert нет в enum -> fallback на Insert
-//        case KEY_DC:    return ctrl ? KeyCode::CtrlDelete : shift ? KeyCode::ShiftDelete : KeyCode::DeleteKey;
-//
-//            // F1-F12
-//        case KEY_F(1):  return alt ? KeyCode::AltF1 : ctrl ? KeyCode::CtrlF1 : shift ? KeyCode::ShiftF1 : KeyCode::F1;
-//        case KEY_F(2):  return alt ? KeyCode::AltF2 : ctrl ? KeyCode::CtrlF2 : shift ? KeyCode::ShiftF2 : KeyCode::F2;
-//        case KEY_F(3):  return alt ? KeyCode::AltF3 : ctrl ? KeyCode::CtrlF3 : shift ? KeyCode::ShiftF3 : KeyCode::F3;
-//        case KEY_F(4):  return alt ? KeyCode::AltF4 : ctrl ? KeyCode::CtrlF4 : shift ? KeyCode::ShiftF4 : KeyCode::F4;
-//        case KEY_F(5):  return alt ? KeyCode::AltF5 : ctrl ? KeyCode::CtrlF5 : shift ? KeyCode::ShiftF5 : KeyCode::F5;
-//        case KEY_F(6):  return alt ? KeyCode::AltF6 : ctrl ? KeyCode::CtrlF6 : shift ? KeyCode::ShiftF6 : KeyCode::F6;
-//        case KEY_F(7):  return alt ? KeyCode::AltF7 : ctrl ? KeyCode::CtrlF7 : shift ? KeyCode::ShiftF7 : KeyCode::F7;
-//        case KEY_F(8):  return alt ? KeyCode::AltF8 : ctrl ? KeyCode::CtrlF8 : shift ? KeyCode::ShiftF8 : KeyCode::F8;
-//        case KEY_F(9):  return alt ? KeyCode::AltF9 : ctrl ? KeyCode::CtrlF9 : shift ? KeyCode::ShiftF9 : KeyCode::F9;
-//        case KEY_F(10): return alt ? KeyCode::AltF10 : ctrl ? KeyCode::CtrlF10 : shift ? KeyCode::ShiftF10 : KeyCode::F10;
-//        case KEY_F(11): return alt ? KeyCode::AltF11 : ctrl ? KeyCode::CtrlF11 : shift ? KeyCode::ShiftF11 : KeyCode::F11;
-//        case KEY_F(12): return alt ? KeyCode::AltF12 : ctrl ? KeyCode::CtrlF12 : shift ? KeyCode::ShiftF12 : KeyCode::F12;
-//
-//        default: return static_cast<KeyCode>(key); // fallback для редких KEY_*
+//    if (elapsed < 50) {
+//        for (auto key : previous_keys) {
+//            if (isModifier(key)) {
+//                unique_keys.insert(key);
+//            }
 //        }
 //    }
 //
-//    // =========================================================================
-//    // БЛОК 2: Alt + Буквы (a-z) -> маппинг в AltA..AltZ
-//    // =========================================================================
-//    if (alt && key >= 'a' && key <= 'z') {
-//        // Статическая таблица lookup. Компилятор развернёт её в эффективный код.
-//        constexpr KeyCode altMap[] = {
-//            KeyCode::AltA, KeyCode::AltB, KeyCode::AltC, KeyCode::AltD, KeyCode::AltE,
-//            KeyCode::AltF, KeyCode::AltG, KeyCode::AltH, KeyCode::AltI, KeyCode::AltJ,
-//            KeyCode::AltK, KeyCode::AltL, KeyCode::AltM, KeyCode::AltN, KeyCode::AltO,
-//            KeyCode::AltP, KeyCode::AltQ, KeyCode::AltR, KeyCode::AltS, KeyCode::AltT,
-//            KeyCode::AltU, KeyCode::AltV, KeyCode::AltW, KeyCode::AltX, KeyCode::AltY, KeyCode::AltZ
-//        };
-//        return altMap[key - 'a'];
+//    last_read = current_time;
+//    previous_keys = unique_keys;
+//
+//    result.reserve(unique_keys.size());
+//    for (auto key : unique_keys) {
+//        result.push_back(key);
 //    }
 //
-//    // =========================================================================
-//    // БЛОК 3: Стандартные ASCII символы и Ctrl+буквы
-//    // Благодаря точному совпадению значений в вашем enum, простое приведение
-//    // типа автоматически возвращает правильные KeyCode:
-//    //   0x01-0x1A -> CtrlA..CtrlZ
-//    //   0x08      -> Backspace (физически Ctrl+H)
-//    //   0x09      -> Tab (физически Ctrl+I)
-//    //   0x0D      -> Enter (физически Ctrl+M)
-//    //   0x1B      -> Escape
-//    //   0x20-0x7E -> Пробел, буквы, цифры, символы
-//    // =========================================================================
-//    return static_cast<KeyCode>(key);
+//    return result;
 //}
+////////////////////////////////////
+
 
 KeyCode InputManager::getKeyCode() {
     // ============================================================

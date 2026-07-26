@@ -45,14 +45,13 @@ struct ConsoleTools
 
         return csbi.srWindow.Right - csbi.srWindow.Left + 1;
 #else
-		static std::pair<int, int> getVisibleSizeUnix() 
-        {
+
 			struct winsize w;
 			if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) 
             {
 					return w.ws_col;
 			}
-        }
+        
 #endif
     }
     static int GetConsoleHeight() {
@@ -65,12 +64,13 @@ struct ConsoleTools
 
         return csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 #else
-        static std::pair<int, int> getVisibleSizeUnix() {
+        // static std::pair<int, int> getVisibleSizeUnix()
+        // {
             struct winsize w;
             if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
                 return w.ws_row;
             }
-        }
+        // }
 #endif
     }
 };

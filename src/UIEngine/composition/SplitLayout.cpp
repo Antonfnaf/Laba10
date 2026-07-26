@@ -1,5 +1,7 @@
 #include "UIEngine/composition/SplitLayout.h"
 
+#include <cmath>
+
 
 std::vector<std::vector<Pixel>> SplitLayout::GetFrameLO(int width, int height, IWindow* active) const {
 	std::vector<std::vector<Pixel>> result;
@@ -9,10 +11,12 @@ std::vector<std::vector<Pixel>> SplitLayout::GetFrameLO(int width, int height, I
 
 		result = FrameTools::ConcatFrame(first->GetFrame(width, heightFirst, active), second->GetFrame(width, heightSecond, active), false);
 	} else {
-		int widthFirst = static_cast<int>(std::round(width * firstRatio));
-		int widthSecond = width - widthFirst;
+          int widthFirst = static_cast<int>(std::round(width * firstRatio));
+          int widthSecond = width - widthFirst;
 
-		result = FrameTools::ConcatFrame(first->GetFrame(widthFirst, height, active), second->GetFrame(widthSecond, height, active), true);
+          result = FrameTools::ConcatFrame(
+              first->GetFrame(widthFirst, height, active),
+              second->GetFrame(widthSecond, height, active), true);
 	}
 	return result;
 }
