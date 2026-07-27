@@ -1,10 +1,11 @@
 ﻿#include <iostream>
 
-#include "Core/enums.h"
+//#include "Core/enums.h"
 
 #include "UIEngine/rendering/Renderer.h"
 
 #include "Tests/Graphics/test1.h"
+#include "Tests/Input/RITest.hpp"
             
 void PrintAllColors() {
 	int n, m;
@@ -44,7 +45,8 @@ int main()
 {
 	
     //PrintAllColors();
-    Test1::StartTest(10000);
+    //Test1::StartTest(10000);
+	RITest::Start();
     //PrintAllColors();
 	//std::cout << "\033[48;2;23;34;123mD";
     //Field* field = new Field(222, 222, 4, 7);*/

@@ -17,9 +17,9 @@ private:
     std::string _prevStdin; // Буфер для фрагментированных escape-последовательностей
 
 #ifdef _WIN32
-    static unsigned long _originalConsoleMode;
+    unsigned long _originalConsoleMode;
 #else
-    static struct termios _originalTermios;
+    struct termios _originalTermios;
 #endif
 
     // Внутренняя структура для результата парсинга одного символа/последовательности
@@ -37,8 +37,8 @@ private:
 
 public:
     // Статические методы для управления режимом терминала
-    static void EnableRawMode();
-    static void DisableRawMode();
+    void EnableRawMode();
+    void DisableRawMode();
 
     // Основной метод получения клавиш за текущий тик
     std::vector<Key> GetKeyCodes();

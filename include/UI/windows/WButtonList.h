@@ -39,16 +39,16 @@ public:
 
 WButtonList::WButtonList(std::string name, std::vector<Button> button) : head(Converter::ParseToPic(name)[0]), button(button) {
 	binds.Add({
-		{KeyCode::UpArrow, [&]()  {SetSelect(-1); }},
-		{KeyCode::DownArrow, [&]() {SetSelect(1); }},
-		{KeyCode::Enter, [&]() { Do(); }},
+		{KeyChord::UpArrow, [&]()  {SetSelect(-1); }},
+		{KeyChord::DownArrow, [&]() {SetSelect(1); }},
+		{KeyChord::Enter, [&]() { Do(); }},
 		});
 }
 WButtonList::WButtonList(std::vector<Pixel> name, std::vector<Button> button) : head(name), button(button) {
 	binds.Add({
-{KeyCode::UpArrow, [&]() { SetSelect(-1); }},
-{KeyCode::DownArrow, [&]() { SetSelect(1); }},
-{KeyCode::Enter, [&]() { Do(); }},
+{KeyChord::UpArrow, [&]() { SetSelect(-1); }},
+{KeyChord::DownArrow, [&]() { SetSelect(1); }},
+{KeyChord::Enter, [&]() { Do(); }},
 		});
 }
 
