@@ -195,7 +195,7 @@ public:
 		);
 
 
-		WindowManager::SetDefaultBinds({ {KeyCode::Escape,[&]() {time = 0; }} });
+		WindowManager::SetDefaultBinds({ {KeyChord::Escape,[&]() {time = 0; }} });
 		//std::unique_ptr buttonList1 =
 
 
@@ -204,10 +204,10 @@ public:
 		{
 			
 			WindowManager::AddBinds({
-				{KeyCode::Digit1, [&]() {WindowManager::OpenWindow("1"); WindowChoise = false; }},
-				{KeyCode::Digit2, [&]() {WindowManager::OpenWindow("2"); WindowChoise = false; }},
-				{KeyCode::Digit3, [&]() {WindowManager::OpenWindow("3"); WindowChoise = false; }},
-				{KeyCode::Digit4, [&]() {WindowManager::OpenWindow("4"); WindowChoise = false; }},
+				{KeyChord::Digit1, [&]() {WindowManager::OpenWindow("1"); WindowChoise = false; }},
+				{KeyChord::Digit2, [&]() {WindowManager::OpenWindow("2"); WindowChoise = false; }},
+				{KeyChord::Digit3, [&]() {WindowManager::OpenWindow("3"); WindowChoise = false; }},
+				{KeyChord::Digit4, [&]() {WindowManager::OpenWindow("4"); WindowChoise = false; }},
 				});
 
 

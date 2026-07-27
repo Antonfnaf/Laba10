@@ -30,13 +30,13 @@ public:
 	//Возвращает список лейаутов до искомого окна
 	virtual std::vector<ILayout*> GetPath(IWindow* window) const = 0;
 	//Безопасное получние действий
-	std::map<KeyCode, std::function<void()>> GetBinds() {
+	std::map<KeyChord, std::function<void()>> GetBinds() {
 		binds.ClearAll();
 		UpdateBinds();
 		return binds.GetCopy();
 	}
 	//Безопасное получние действий с зависимостью от активного обьекта
-	std::map<KeyCode, std::function<void()>> GetBinds(IWindow* active) {
+	std::map<KeyChord, std::function<void()>> GetBinds(IWindow* active) {
 		binds.ClearAll();
 		UpdateBinds(active);
 		return binds.GetCopy();

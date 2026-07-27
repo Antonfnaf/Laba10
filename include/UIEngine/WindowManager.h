@@ -23,33 +23,33 @@ public:
 	static void Init() {
 		screen.SetDefaultBinds({
 
-				{KeyCode::AltLeftArrow, [&]() {Screen_SwapLayouts(Direction::Left); }},
-				{KeyCode::AltDownArrow, [&]() {Screen_SwapLayouts(Direction::Down); }},
-				{KeyCode::AltUpArrow, [&]() {Screen_SwapLayouts(Direction::Up); }},
-				{KeyCode::AltRightArrow, [&]() {Screen_SwapLayouts(Direction::Right); }},
-				{KeyCode::CtrlLeftArrow, [&]() {Screen_ChangeFocus(Direction::Left); }},
-				{KeyCode::CtrlDownArrow, [&]() {Screen_ChangeFocus(Direction::Down); }},
-				{KeyCode::CtrlUpArrow, [&]() {Screen_ChangeFocus(Direction::Up); }},
-				{KeyCode::CtrlRightArrow, [&]() {Screen_ChangeFocus(Direction::Right); }},
-				{KeyCode::CtrlA, [&]() {Screen_SplitActive(new NullWindow(),false); }},
-				{KeyCode::CtrlX, [&]() {Screen_SplitActive(new NullWindow(),true); }},
-				{KeyCode::CtrlD, [&]() {Screen_DeleteActive(); }},
-				{KeyCode::ShiftRightArrow, [&]() {
+				{KeyChord::AltLeftArrow, [&]() {Screen_SwapLayouts(Direction::Left); }},
+				{KeyChord::AltDownArrow, [&]() {Screen_SwapLayouts(Direction::Down); }},
+				{KeyChord::AltUpArrow, [&]() {Screen_SwapLayouts(Direction::Up); }},
+				{KeyChord::AltRightArrow, [&]() {Screen_SwapLayouts(Direction::Right); }},
+				{KeyChord::CtrlLeftArrow, [&]() {Screen_ChangeFocus(Direction::Left); }},
+				{KeyChord::CtrlDownArrow, [&]() {Screen_ChangeFocus(Direction::Down); }},
+				{KeyChord::CtrlUpArrow, [&]() {Screen_ChangeFocus(Direction::Up); }},
+				{KeyChord::CtrlRightArrow, [&]() {Screen_ChangeFocus(Direction::Right); }},
+				{KeyChord::CtrlA, [&]() {Screen_SplitActive(new NullWindow(),false); }},
+				{KeyChord::CtrlX, [&]() {Screen_SplitActive(new NullWindow(),true); }},
+				{KeyChord::CtrlD, [&]() {Screen_DeleteActive(); }},
+				{KeyChord::ShiftRightArrow, [&]() {
 					if (!Screen_ResizeActiveByPixels(Direction::Right,1)) {
 						Screen_ResizeActiveByPixels(Direction::Left, -1);
 					}
 				}},
-				{KeyCode::ShiftLeftArrow, [&]() {
+				{KeyChord::ShiftLeftArrow, [&]() {
 					if (!Screen_ResizeActiveByPixels(Direction::Right, -1)) {
 						Screen_ResizeActiveByPixels(Direction::Left, 1);
 					}
 				}},
-				{KeyCode::ShiftDownArrow, [&]() {
+				{KeyChord::ShiftDownArrow, [&]() {
 					if (!Screen_ResizeActiveByPixels(Direction::Down, 1)) {
 						Screen_ResizeActiveByPixels(Direction::Up, -1);
 					}
 				}},
-				{KeyCode::ShiftUpArrow, [&]() {
+				{KeyChord::ShiftUpArrow, [&]() {
 					if (!Screen_ResizeActiveByPixels(Direction::Down, -1)) {
 						Screen_ResizeActiveByPixels(Direction::Up, 1);
 					}
@@ -99,9 +99,9 @@ public:
 	static void Screen_DefaultBindsEnable() { screen.DefaultBindsEnable(); }
 
 	//Позволяет добавить кастомное действие к клавише для скрина
-	static void Screen_AddUserBinds(KeyCode key, std::function<void()> action) { screen.AddUserBinds(key, action); }
+	static void Screen_AddUserBinds(KeyChord key, std::function<void()> action) { screen.AddUserBinds(key, action); }
 	//позволяет добавить несколько кастомных действий к клавишам для скрина
-	static void Screen_AddUserBinds(std::map<KeyCode, std::function<void()>> actions) { screen.AddUserBinds(actions); }
+	static void Screen_AddUserBinds(std::map<KeyChord, std::function<void()>> actions) { screen.AddUserBinds(actions); }
 
 	//============== Надстройки над ScreenLayout ==============
 	//Открытие окна по закладке.
@@ -145,16 +145,16 @@ public:
 
 	//============== Binds methods ==============
 	//Получение всех клавиш для скрина и активного окна
-	static std::map<KeyCode, std::function<void()>> GetBinds(){
+	static std::map<KeyChord, std::function<void()>> GetBinds(){
 		Bind temp;
 		temp.Add(screen.GetBinds());
 		temp.Add(tempBinds.GetCopy());
 		temp.Add(binds.GetCopy());
 		return temp.GetCopy();
 	}
-	static void SetDefaultBinds(std::map<KeyCode, std::function<void()>> actions) { binds.ClearAll(); binds.Add(actions); }
-	static void AddBinds(KeyCode key, std::function<void()> action) { tempBinds.Add(key, action); }
-	static void AddBinds(std::map<KeyCode, std::function<void()>> actions) { tempBinds.Add(actions); }
+	static void SetDefaultBinds(std::map<KeyChord, std::function<void()>> actions) { binds.ClearAll(); binds.Add(actions); }
+	static void AddBinds(KeyChord key, std::function<void()> action) { tempBinds.Add(key, action); }
+	static void AddBinds(std::map<KeyChord, std::function<void()>> actions) { tempBinds.Add(actions); }
 
 	//============== Update methods ==============
 	//Обновление процессов

@@ -1,151 +1,87 @@
 ﻿#pragma once
 #include <cstdint>
+#include <string>
 
-enum class KeyCodeс : uint32_t
-{
+// Новый enum для сырого ввода (только одиночные клавиши)
+enum class Key : uint32_t {
     None = 0xFFFFFFFF,
 
-    // =========================================================================
-    // Модификаторы (как отдельные клавиши)
-    // =========================================================================
-
-    LeftCtrl = 0x0100,  RightCtrl = 0x0101,
-    LeftAlt = 0x0102,   RightAlt = 0x0103,
-    LeftShift = 0x0104, RightShift = 0x0105,
-    LeftSuper = 0x0106, RightSuper = 0x0107,
-    LeftHyper = 0x0108, RightHyper = 0x0109,
-    LeftMeta = 0x010A,  RightMeta = 0x010B,
-
-    CapsLock = 0x010C,
-    NumLock = 0x010D,
-    ScrollLock = 0x010E,
-
-    // =========================================================================
-    // Буквы (строчные и заглавные - разные клавиши!)
-    // =========================================================================
-    A = 0x41, B = 0x42, C = 0x43, D = 0x44,
-    E = 0x45, F = 0x46, G = 0x47, H = 0x48,
-    I = 0x49, J = 0x4A, K = 0x4B, L = 0x4C,
-    M = 0x4D, N = 0x4E, O = 0x4F, P = 0x50,
-    Q = 0x51, R = 0x52, S = 0x53, T = 0x54,
-    U = 0x55, V = 0x56, W = 0x57, X = 0x58,
+    // Модификаторы
+    Ctrl = 0x0100, Alt = 0x0101, Shift = 0x0102, Super = 0x0103,
+    
+    // Буквы (строчные и заглавные)
+    A = 0x41, B = 0x42, C = 0x43, D = 0x44, E = 0x45, F = 0x46, G = 0x47, H = 0x48,
+    I = 0x49, J = 0x4A, K = 0x4B, L = 0x4C, M = 0x4D, N = 0x4E, O = 0x4F, P = 0x50,
+    Q = 0x51, R = 0x52, S = 0x53, T = 0x54, U = 0x55, V = 0x56, W = 0x57, X = 0x58,
     Y = 0x59, Z = 0x5A,
-
-    a = 0x61, b = 0x62, c = 0x63, d = 0x64,
-    e = 0x65, f = 0x66, g = 0x67, h = 0x68,
-    i = 0x69, j = 0x6A, k = 0x6B, l = 0x6C,
-    m = 0x6D, n = 0x6E, o = 0x6F, p = 0x70,
-    q = 0x71, r = 0x72, s = 0x73, t = 0x74,
-    u = 0x75, v = 0x76, w = 0x77, x = 0x78,
+    a = 0x61, b = 0x62, c = 0x63, d = 0x64, e = 0x65, f = 0x66, g = 0x67, h = 0x68,
+    i = 0x69, j = 0x6A, k = 0x6B, l = 0x6C, m = 0x6D, n = 0x6E, o = 0x6F, p = 0x70,
+    q = 0x71, r = 0x72, s = 0x73, t = 0x74, u = 0x75, v = 0x76, w = 0x77, x = 0x78,
     y = 0x79, z = 0x7A,
 
-    // =========================================================================
     // Цифры
-    // =========================================================================
-    Digit0 = 0x30, Digit1 = 0x31, Digit2 = 0x32,
-    Digit3 = 0x33, Digit4 = 0x34, Digit5 = 0x35,
-    Digit6 = 0x36, Digit7 = 0x37, Digit8 = 0x38,
-    Digit9 = 0x39,
+    Digit0 = 0x30, Digit1 = 0x31, Digit2 = 0x32, Digit3 = 0x33, Digit4 = 0x34,
+    Digit5 = 0x35, Digit6 = 0x36, Digit7 = 0x37, Digit8 = 0x38, Digit9 = 0x39,
 
-    // =========================================================================
-    // Символы (ASCII)
-    // =========================================================================
-    Space = 0x20,
-    Exclamation = 0x21,
-    DoubleQuote = 0x22,
-    Hash = 0x23,
-    Dollar = 0x24,
-    Percent = 0x25,
-    Ampersand = 0x26,
-    SingleQuote = 0x27,
-    LeftParen = 0x28,
-    RightParen = 0x29,
-    Asterisk = 0x2A,
-    Plus = 0x2B,
-    Comma = 0x2C,
-    Minus = 0x2D,
-    Dot = 0x2E,
-    Slash = 0x2F,
-    Colon = 0x3A,
-    Semicolon = 0x3B,
-    Less = 0x3C,
-    Equal = 0x3D,
-    Greater = 0x3E,
-    Question = 0x3F,
-    At = 0x40,
-    LeftBracket = 0x5B,
-    Backslash = 0x5C,
-    RightBracket = 0x5D,
-    Caret = 0x5E,
-    Underscore = 0x5F,
-    Backtick = 0x60,
-    LeftBrace = 0x7B,
-    Pipe = 0x7C,
-    RightBrace = 0x7D,
-    Tilde = 0x7E,
+    // Символы
+    Space = 0x20, Exclamation = 0x21, DoubleQuote = 0x22, Hash = 0x23, Dollar = 0x24,
+    Percent = 0x25, Ampersand = 0x26, SingleQuote = 0x27, LeftParen = 0x28, RightParen = 0x29,
+    Asterisk = 0x2A, Plus = 0x2B, Comma = 0x2C, Minus = 0x2D, Dot = 0x2E, Slash = 0x2F,
+    Colon = 0x3A, Semicolon = 0x3B, Less = 0x3C, Equal = 0x3D, Greater = 0x3E, Question = 0x3F,
+    At = 0x40, LeftBracket = 0x5B, Backslash = 0x5C, RightBracket = 0x5D, Caret = 0x5E,
+    Underscore = 0x5F, Backtick = 0x60, LeftBrace = 0x7B, Pipe = 0x7C, RightBrace = 0x7D, Tilde = 0x7E,
 
-    // =========================================================================
-    // Управляющие символы (ТОЛЬКО те, у которых нет Ctrl+буквы)
-    // =========================================================================
-    Escape = 0x1B,  
-    Enter = 0x0D,       Tab = 0x09,     
-    Backspace = 0x08,   Delete = 0x7F,
+    // Управляющие
+    Escape = 0x1B, Enter = 0x0D, Tab = 0x09, Backspace = 0x08, Delete = 0x7F,
 
-    // =========================================================================
-    // Специальные клавиши
-    // =========================================================================
-    Insert = 0x0200,    PrintScreen = 0x0201,
-    Pause = 0x0202,     Menu = 0x0203,
-
-    // =========================================================================
-    // Навигация
-    // =========================================================================
-    Up = 0x0210,
-    Down = 0x0211,
-    Left = 0x0212,
-    Right = 0x0213,
-
-    Home = 0x0214,
-    End = 0x0215,
-    PageUp = 0x0216,
-    PageDown = 0x0217,
-
-    // =========================================================================
-    // Функциональные клавиши
-    // =========================================================================
-    F1 = 0x0300, F2 = 0x0301, F3 = 0x0302, F4 = 0x0303,
-    F5 = 0x0304, F6 = 0x0305, F7 = 0x0306, F8 = 0x0307,
-    F9 = 0x0308, F10 = 0x0309, F11 = 0x030A, F12 = 0x030B,
-    F13 = 0x030C, F14 = 0x030D, F15 = 0x030E, F16 = 0x030F,
-    F17 = 0x0310, F18 = 0x0311, F19 = 0x0312, F20 = 0x0313,
-
-    // =========================================================================
-    // Numpad
-    // =========================================================================
-    NumPad0 = 0x0400, NumPad1 = 0x0401, NumPad2 = 0x0402,
-    NumPad3 = 0x0403, NumPad4 = 0x0404, NumPad5 = 0x0405,
-    NumPad6 = 0x0406, NumPad7 = 0x0407, NumPad8 = 0x0408,
-    NumPad9 = 0x0409,
-    NumPadDot = 0x040A,
-    NumPadEnter = 0x040B,
-    NumPadPlus = 0x040C,
-    NumPadMinus = 0x040D,
-    NumPadMultiply = 0x040E,
-    NumPadDivide = 0x040F,
-    NumPadEqual = 0x0410,
-
-    // =========================================================================
-    // Медиа-клавиши
-    // =========================================================================
-    MediaPlayPause = 0x0500,
-    MediaStop = 0x0501,
-    MediaPrev = 0x0502,
-    MediaNext = 0x0503,
-    MediaMute = 0x0504,
-    MediaVolumeUp = 0x0505,
-    MediaVolumeDown = 0x0506,
+    // Навигация и спец. клавиши
+    Up = 0x0210, Down = 0x0211, Left = 0x0212, Right = 0x0213,
+    Home = 0x0214, End = 0x0215, PageUp = 0x0216, PageDown = 0x0217,
+    Insert = 0x0200, F1 = 0x0300, F2 = 0x0301, F3 = 0x0302, F4 = 0x0303,
+    F5 = 0x0304, F6 = 0x0305, F7 = 0x0306, F8 = 0x0307, F9 = 0x0308, F10 = 0x0309,
+    F11 = 0x030A, F12 = 0x030B
 };
-enum class KeyCode : uint16_t
+inline std::string GetKeyName(Key key) {
+    switch (key) {
+        case Key::None: return "None";
+        case Key::Ctrl: return "Ctrl";
+        case Key::Alt: return "Alt";
+        case Key::Shift: return "Shift";
+        case Key::Super: return "Super";
+        case Key::Space: return "Space";
+        case Key::Escape: return "Escape";
+        case Key::Enter: return "Enter";
+        case Key::Tab: return "Tab";
+        case Key::Backspace: return "Backspace";
+        case Key::Delete: return "Delete";
+        case Key::Up: return "Up";
+        case Key::Down: return "Down";
+        case Key::Left: return "Left";
+        case Key::Right: return "Right";
+        case Key::Home: return "Home";
+        case Key::End: return "End";
+        case Key::PageUp: return "PageUp";
+        case Key::PageDown: return "PageDown";
+        case Key::Insert: return "Insert";
+        case Key::F1: return "F1"; case Key::F2: return "F2"; case Key::F3: return "F3";
+        case Key::F4: return "F4"; case Key::F5: return "F5"; case Key::F6: return "F6";
+        case Key::F7: return "F7"; case Key::F8: return "F8"; case Key::F9: return "F9";
+        case Key::F10: return "F10"; case Key::F11: return "F11"; case Key::F12: return "F12";
+        default:
+            if (key >= Key::A && key <= Key::Z) {
+                return std::string(1, static_cast<char>(key));
+            }
+            if (key >= Key::a && key <= Key::z) {
+                return std::string(1, static_cast<char>(key));
+            }
+            if (key >= Key::Digit0 && key <= Key::Digit9) {
+                return std::string(1, static_cast<char>(key));
+            }
+            // Для остальных клавиш можно добавить свои имена по мере необходимости
+            return "Unknown";
+    }
+}
+enum class KeyChord : uint16_t
 {
     None = 0xFFFF,  // специальное значение для отсутствия клавиши
 

@@ -76,7 +76,7 @@ public:
 	std::vector<ILayout*> GetPath(IWindow* window) const override { return root ? root->GetPath(window) : std::vector<ILayout*>(); }
 
 	//позволяет получить клавиши скрина и активного окна
-	std::map<KeyCode, std::function<void()>> GetBinds() {
+	std::map<KeyChord, std::function<void()>> GetBinds() {
 		binds.ClearAll();
 
 		UpdateBinds();
@@ -129,11 +129,11 @@ public:
 	bool ResizeActiveByPixels(Direction direction, int delta);
 
 	//Определяет дефолтные действия для скрина.
-	static void SetDefaultBinds(std::map<KeyCode, std::function<void()>> binds) { defaultBinds.ClearAll(); defaultBinds.Add(binds); }
+	static void SetDefaultBinds(std::map<KeyChord, std::function<void()>> binds) { defaultBinds.ClearAll(); defaultBinds.Add(binds); }
 	//Позволяет добавить кастомное действие к клавише для скрина
-	void AddUserBinds(KeyCode key, std::function<void()> action) { userBinds.Add(key, action); }
+	void AddUserBinds(KeyChord key, std::function<void()> action) { userBinds.Add(key, action); }
 	//позволяет добавить несколько кастомных действий к клавишам для скрина
-	void AddUserBinds(std::map<KeyCode, std::function<void()>> actions) { userBinds.Add(actions); }
+	void AddUserBinds(std::map<KeyChord, std::function<void()>> actions) { userBinds.Add(actions); }
 	
 	void DefaultBindsDisable() { defaultBindsIsOn = false; }
 	void DefaultBindsEnable() { defaultBindsIsOn = true; }

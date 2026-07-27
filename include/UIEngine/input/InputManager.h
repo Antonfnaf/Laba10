@@ -19,7 +19,7 @@
 
 struct Action
 {
-    std::vector<KeyCode> keys;
+    std::vector<KeyChord> keys;
     std::function<void()> action;
 	operator std::function<void()>() const { return action; }
 };
@@ -29,13 +29,13 @@ struct InputManager
     
 private:
     static Bind actions;
-    static KeyCode getKeyCode();
+    static KeyChord getKeyCode();
     //static std::vector<KeyCode> getKeyCodes();
 
 public:
 
-    static void Bind(KeyCode key, std::function<void()> action);
-    static void Bind(std::map < KeyCode, std::function<void()>> localActions);
+    static void Bind(KeyChord key, std::function<void()> action);
+    static void Bind(std::map < KeyChord, std::function<void()>> localActions);
     static void ClearBinds();
     static void Do();
 
@@ -46,13 +46,13 @@ struct InputManager1
     
 private:
     static Bind actions;
-    static KeyCode getKeyCode();
+    static KeyChord getKeyCode();
     //static std::vector<KeyCode> getKeyCodes();
 
 public:
 
-    static void Bind(KeyCode key, std::function<void()> action);
-    static void Bind(std::map < KeyCode, std::function<void()>> localActions);
+    static void Bind(KeyChord key, std::function<void()> action);
+    static void Bind(std::map < KeyChord, std::function<void()>> localActions);
     static void ClearBinds();
     static void Do();
 

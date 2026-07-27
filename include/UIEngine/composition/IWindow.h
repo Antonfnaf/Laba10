@@ -18,7 +18,7 @@ protected:
 public:
 	using IRenderable::GetFrame;
 	//Геттер для биндов
-	std::map<KeyCode, std::function<void()>> GetBinds() {
+	std::map<KeyChord, std::function<void()>> GetBinds() {
 		return binds.GetCopy();
 	}
 

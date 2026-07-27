@@ -10,19 +10,19 @@
 
 class Bind {
 private:
-    std::map<KeyCode, std::function<void()>> actions;
+    std::map<KeyChord, std::function<void()>> actions;
 
 public:
-    std::function<void()>& operator[](KeyCode key) {
+    std::function<void()>& operator[](KeyChord key) {
         return actions[key];
     }
-    bool contains(KeyCode key) const {
+    bool contains(KeyChord key) const {
         return actions.find(key) != actions.end();
     }
-    std::map<KeyCode, std::function<void()>> GetCopy() const {
+    std::map<KeyChord, std::function<void()>> GetCopy() const {
         return actions;
     }
-    void Add(KeyCode key, std::function<void()> action) {
+    void Add(KeyChord key, std::function<void()> action) {
         actions[key] = action;
         return;
     }
@@ -30,7 +30,7 @@ public:
         Add(bind.GetCopy());
         return;
     }
-    void Add(std::map<KeyCode, std::function<void()>> localActions) {
+    void Add(std::map<KeyChord, std::function<void()>> localActions) {
         for (const auto& [key, action] : localActions) 
             actions.insert_or_assign(key, action);
         return;
@@ -38,7 +38,7 @@ public:
     void ClearAll() {
         actions.clear();
     }
-    void ClearKey(KeyCode key) {
+    void ClearKey(KeyChord key) {
         actions[key] = [](){};
     }
 };
