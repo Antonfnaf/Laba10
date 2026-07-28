@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <utility>
+#include <memory>
 
 #include "Core/Pixel.h"
 #include "UIEngine/composition/ILayout.h"
