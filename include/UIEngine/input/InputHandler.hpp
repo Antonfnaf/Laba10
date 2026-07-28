@@ -9,11 +9,29 @@
 #include "Core/enums.h"
 #include "UIEngine/input//Bind.h"
 
+struct KeyEvent {
+    int code;       // Код клавиши if -2 see raw_sequence
+    int modifiers;  // Маска модификаторов
+    int event_type; // 0=None, 1=Press, 2=Repeat, 3=Release
+    bool is_kitty;  // Был ли это Kitty-код
+    std::string raw_sequence; // Сырая последовательность, если нужно
+};
 
 class InputHandler {
 private:
     struct termios old_tio;
     int support_level = 0;
+
+
+    int parse_to_int(std::string str) {
+        int res = 0;
+        int i = 0;
+        while (i < str.length() && (int)str[i] >= 0x30 && (int)str[i] < 0x3A ) {
+            res*=10;
+            res+=(int)str[i++]-48;
+        }
+        return i < str.length() ? 0 : res;
+    }
 public:
     InputHandler() {
         // Save the terminal settings
@@ -89,5 +107,73 @@ public:
 
     int get_support_level() const {
         return support_level;
+    }
+
+    KeyEvent get_key_event() {
+        KeyEvent event = {0, 0, 0, false, ""};
+
+        if (!kbhit()) {
+            return {-1, 0, 0, false, ""}; // No key pressed
+        }
+
+        int first = getch();
+        if (first == -1) {
+            return {-1, 0, 0, false, ""}; // No key pressed
+        }
+
+        // 1. Обычный символ (не Escape)
+        if (first != 0x1B) {
+            return {first, 0, 1, false, std::string(1, static_cast<char>(first))}; // Считаем обычным нажатием
+        }
+
+        // 2. Начало последовательности CSI
+    if (getch() == '[') {
+        std::string seq;
+        char ch;
+        // Читаем до финального символа (обычно 'u' для Kitty или '~', 'A' для старых)
+        while (read(STDIN_FILENO, &ch, 1) == 1) {
+            seq += ch;
+            if (ch == 'u' || ch == '~' || (ch >= 'A' && ch <= 'Z')) break;
+        }
+
+        // Проверка на Kitty Protocol (заканчивается на 'u')
+        if (!seq.empty() && seq.back() == 'u') {
+            // Парсим Kitty формат: "code;mods:type"
+            // Убираем возможные лишние символы если нужно
+            int code = 0, mods = 1, type = 1;
+            
+            // Простой парсинг через sscanf или вручную
+            // Пример строки внутри seq: "97;5:3"
+            char format[64];
+            strcpy(format, seq.c_str());
+            
+            // Ищем двоеточие для типа события
+            std::string s(seq);
+            size_t colon_pos = s.find(':');
+            size_t semi_pos = s.find(';');
+
+            if (semi_pos != std::string::npos) {
+                code = parse_to_int(s.substr(0, semi_pos));
+                if (colon_pos != std::string::npos) {
+                    mods = parse_to_int(s.substr(semi_pos + 1, colon_pos - semi_pos - 1));
+                    type = parse_to_int(s.substr(colon_pos + 1));
+                } else {
+                    mods = parse_to_int(s.substr(semi_pos + 1));
+                }
+            } else if (colon_pos != std::string::npos) {
+                code = parse_to_int(s.substr(0, colon_pos));
+                type = parse_to_int(s.substr(colon_pos + 1));
+            } else {
+                code = parse_to_int(s);
+            }
+                
+            return {code, mods, type, true, "\x1b[" + seq};
+        }
+        
+        // Здесь случаи старых кодов (\x1b[A и т.д.)
+        return {-2, 0, 1, false, "\x1b[" + seq}; 
+    }
+
+    return {0x1B, 0, 1, false, "\x1b"}; // Просто Esc
     }
 };
