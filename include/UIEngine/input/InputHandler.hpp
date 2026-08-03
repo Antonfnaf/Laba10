@@ -7,14 +7,19 @@
 #include <poll.h>
 
 #include "Core/enums.h"
-#include "UIEngine/input//Bind.h"
+#include "UIEngine/input/Bind.h"
 
-struct KeyEvent {
+struct InputEvent {
     int code;       // Код клавиши if -2 see raw_sequence
     int modifiers;  // Маска модификаторов
-    int event_type; // 0=None, 1=Press, 2=Repeat, 3=Release
-    bool is_kitty;  // Был ли это Kitty-код
-    std::string raw_sequence; // Сырая последовательность, если нужно
+    bool is_release; // true if key release event, false if key press
+    std::array<uint8_t, 32> raw_sequence; // Сырая последовательность, если нужно
+    int raw_length; // Длина сырой последовательности
+};
+struct KeyEvent {
+    Key key;       // Клавиша
+    int modifiers;  // Маска модификаторов
+    bool is_release; // true if key release event, false if key press
 };
 
 class InputHandler {
@@ -30,7 +35,7 @@ private:
             res*=10;
             res+=(int)str[i++]-48;
         }
-        return i < str.length() ? 0 : res;
+        return i < str.length() ? -1 : res;
     }
 public:
     InputHandler() {
@@ -48,7 +53,7 @@ public:
 
         fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK); // Set non-blocking mode
 
-        check_support();
+        CheckSupport();
     }
 
     ~InputHandler() {
@@ -57,7 +62,7 @@ public:
         if (support_level > 0) {
             std::cout << "\x1b[<4m";
         }
-        std::cout << "\x1b[?0u";
+        std::cout << "\x1b[>0u";
         std::cout << std::flush; 
 
         tcsetattr(STDIN_FILENO, TCSANOW, &old_tio);
@@ -79,7 +84,7 @@ public:
         return -1; // Return -1 if no input is available
     }
 
-    void check_support() {
+    void CheckSupport() {
         std::cout << "\x1b[?u"; // Запрос версии
         std::cout.flush();
 
@@ -90,14 +95,14 @@ public:
         if (poll(&pfd, 1, 100) > 0) {
             read(STDIN_FILENO, buf, sizeof(buf));
             // Ищем подстроку "?2u" или "?1u"
-            if (strstr(buf, "?2u")) {
+            if (strstr(buf, "2u")) {
                 support_level = 2;
-                std::cout << "\x1b[?2u"; // Включаем явно, если поддержано
+                std::cout << "\x1b[>2u"; // Включаем явно, если поддержано
                 std::cout.flush();
             }
-            else if (strstr(buf, "?1u")) {
+            else if (strstr(buf, "1u")) {
                 support_level = 1;
-                std::cout << "\x1b[?1u"; // Включаем явно, если поддержано
+                std::cout << "\x1b[>1u"; // Включаем явно, если поддержано
                 std::cout.flush();
             } else {
                 support_level = 0;
@@ -105,75 +110,234 @@ public:
         }
     }
 
-    int get_support_level() const {
+    int GetSupportLevel() const {
         return support_level;
     }
 
-    KeyEvent get_key_event() {
-        KeyEvent event = {0, 0, 0, false, ""};
+    InputEvent GetInputEvent() {
+        InputEvent event = {0, 0, false, {0}, 0};
 
         if (!kbhit()) {
-            return {-1, 0, 0, false, ""}; // No key pressed
+            return {-1, 0, false, {0}, 0}; // No key pressed
         }
 
-        int first = getch();
+        uint8_t first = getch();
         if (first == -1) {
-            return {-1, 0, 0, false, ""}; // No key pressed
-        }
-
-        // 1. Обычный символ (не Escape)
-        if (first != 0x1B) {
-            return {first, 0, 1, false, std::string(1, static_cast<char>(first))}; // Считаем обычным нажатием
-        }
-
-        // 2. Начало последовательности CSI
-    if (getch() == '[') {
-        std::string seq;
-        char ch;
-        // Читаем до финального символа (обычно 'u' для Kitty или '~', 'A' для старых)
-        while (read(STDIN_FILENO, &ch, 1) == 1) {
-            seq += ch;
-            if (ch == 'u' || ch == '~' || (ch >= 'A' && ch <= 'Z')) break;
-        }
-
-        // Проверка на Kitty Protocol (заканчивается на 'u')
-        if (!seq.empty() && seq.back() == 'u') {
-            // Парсим Kitty формат: "code;mods:type"
-            // Убираем возможные лишние символы если нужно
-            int code = 0, mods = 1, type = 1;
-            
-            // Простой парсинг через sscanf или вручную
-            // Пример строки внутри seq: "97;5:3"
-            char format[64];
-            strcpy(format, seq.c_str());
-            
-            // Ищем двоеточие для типа события
-            std::string s(seq);
-            size_t colon_pos = s.find(':');
-            size_t semi_pos = s.find(';');
-
-            if (semi_pos != std::string::npos) {
-                code = parse_to_int(s.substr(0, semi_pos));
-                if (colon_pos != std::string::npos) {
-                    mods = parse_to_int(s.substr(semi_pos + 1, colon_pos - semi_pos - 1));
-                    type = parse_to_int(s.substr(colon_pos + 1));
-                } else {
-                    mods = parse_to_int(s.substr(semi_pos + 1));
-                }
-            } else if (colon_pos != std::string::npos) {
-                code = parse_to_int(s.substr(0, colon_pos));
-                type = parse_to_int(s.substr(colon_pos + 1));
-            } else {
-                code = parse_to_int(s);
-            }
-                
-            return {code, mods, type, true, "\x1b[" + seq};
+            return {-1, 0, false, {0}, 0}; // No key pressed
         }
         
-        // Здесь случаи старых кодов (\x1b[A и т.д.)
-        return {-2, 0, 1, false, "\x1b[" + seq}; 
+        // 1. Обычный символ (не Escape)
+        if (first != 0x1B) {
+            return {first, 0, false, {first}, 1}; // Считаем обычным нажатием
+        }
+        std::array<uint8_t, 32> seq = {0x1B};
+        int seq_len = 1;
+        // 2. Начало последовательности CSI
+        uint8_t second = getch();
+        if (second == '[') {
+            seq[1] = '[';
+            seq_len++;
+            // Читаем до финального символа (обычно 'u' для Kitty или '~', 'A' для старых)
+            char ch;
+            while (seq_len < 31 && read(STDIN_FILENO, &ch, 1) == 1) {
+                seq[seq_len++] = ch;
+                if (ch == 'u' || ch == '~' || (ch >= 'A' && ch <= 'Z')) break;
+            }
+            // Проверка на Kitty Protocol (заканчивается на 'u')
+            bool kitty_format = (
+                seq_len > 3 &&
+                seq[0] == 0x1B &&
+                seq[1] == '[' &&
+                (seq[seq_len - 1] == 'u' ||
+                seq[seq_len - 1] == '~' ||
+                (seq[2] =='1' && seq[seq_len - 1] >= 'P' && seq[seq_len - 1] <= 'S')));
+
+            if ( kitty_format) 
+            {
+                // Парсим Kitty формат: "code;mods:type"
+                // Убираем возможные лишние символы если нужно
+                int code = 0, mods = 1;
+                bool release = false;
+                
+                // Пример строки внутри seq: "97;5:3"
+                int i = 2; // Начинаем после "\x1b["
+                while (i< seq_len && (seq[i] >= '0' && seq[i] <= '9')) {
+                    code = code * 10 + (seq[i] - '0');
+                    i++; // Читаем код клавиши
+                }
+                if (i < seq_len && seq[i] == ';') {
+                    i++;
+                    while (i< seq_len && (seq[i] >= '0' && seq[i] <= '9')) {
+                        mods = mods * 10 + (seq[i] - '0');
+                        i++; // Читаем модификаторы
+                    }
+                    if (mods > 16) mods = 16; // Ограничение на модификаторы
+                }
+                if (i < seq_len && seq[i] == ':') {
+                    i++;
+                    if (i < seq_len && (seq[i] >= '0' && seq[i] <= '9')) {
+                        release = (seq[i] - '0') == 3; // 3 означает отпускание клавиши
+                    }
+                }
+                
+                return {code, mods, release, seq, seq_len};
+            } 
+            
+            // Здесь случаи старых кодов (\x1b[A и т.д.)
+            return {-2, 0, false, seq, seq_len}; // Старый код, нужно парсить отдельно
+        } 
+        else if (second == 'O') {
+            seq[1] = 'O';
+            seq_len++;
+            char ch;
+            // Читаем третий байт (P, Q, R, S, A, B...)
+            if (read(STDIN_FILENO, &ch, 1) == 1) {
+                seq[seq_len++] = ch;
+            }
+            return {-2, 0, false, seq, seq_len}; // нужно парсить отдельно
+        }
+        
+        return {0x1B, 0, false, {0x1B}, 1}; // Просто Esc
+    }
+    
+    KeyEvent GetKeyEvent(InputEvent event) {
+        if (event.code == -1) {
+            return {Key::None, event.modifiers, event.is_release}; // No key pressed
+        }
+        if (event.code == -2) {
+            // Обработка старых кодов
+            // здесь используется парсинг event.raw_sequence для определения Key и модификаторов.
+            // Преобразуем сырые байты в строку для удобства сравнения
+            std::string seq(reinterpret_cast<char*>(event.raw_sequence.data()), event.raw_length);
+            
+            // Убираем общий префикс \x1b[ если он есть, чтобы сравнивать "хвост"
+            // Но в linux terminfo некоторые коды начинаются с \x1b[[ (две скобки)
+            
+            Key key = Key::None;
+            int mods = event.modifiers; // В legacy режиме модификаторы часто уже "вшиты" в код или отсутствуют
+            
+            // Навигация
+            if (seq == "\x1b[A") key = Key::UpArrow;
+            else if (seq == "\x1b[B") key = Key::DownArrow;
+            else if (seq == "\x1b[C") key = Key::RightArrow;
+            else if (seq == "\x1b[D") key = Key::LeftArrow;
+            
+            // Editing keypad (Home, End, Del, Ins)
+            else if (seq == "\x1b[1~") key = Key::Home;
+            else if (seq == "\x1b[4~") key = Key::End;
+            else if (seq == "\x1b[3~") key = Key::DeleteKey;
+            else if (seq == "\x1b[2~") key = Key::Insert;
+            else if (seq == "\x1b[5~") key = Key::PgUp;
+            else if (seq == "\x1b[6~") key = Key::PgDn;
+            
+            // Function keys F1-F5 (специфично для linux console - двойная скобка)
+            else if (seq == "\x1b[[A") key = Key::F1;
+            else if (seq == "\x1b[[B") key = Key::F2;
+            else if (seq == "\x1b[[C") key = Key::F3;
+            else if (seq == "\x1b[[D") key = Key::F4;
+            else if (seq == "\x1b[[E") key = Key::F5;
+            
+            // Function keys F6-F12
+            else if (seq == "\x1bOP") key = Key::F1;
+            else if (seq == "\x1bOQ") key = Key::F2;
+            else if (seq == "\x1bOR") key = Key::F3;
+            else if (seq == "\x1bOS") key = Key::F4;
+            else if (seq == "\x1b[15~") key = Key::F5;
+            else if (seq == "\x1b[17~") key = Key::F6;
+            else if (seq == "\x1b[18~") key = Key::F7;
+            else if (seq == "\x1b[19~") key = Key::F8;
+            else if (seq == "\x1b[20~") key = Key::F9;
+            else if (seq == "\x1b[21~") key = Key::F10;
+            else if (seq == "\x1b[23~") key = Key::F11;
+            else if (seq == "\x1b[24~") key = Key::F12;
+            
+            // Shift+Tab (иногда приходит как ^I, но в terminfo linux указано kcbt=\E^I)
+            // Это сложный случай, пока оставим None или обработаем отдельно
+            
+            return {key, mods, event.is_release};
+        }
+        bool kitty_format = (
+            event.raw_sequence[1] == '[' &&
+            event.raw_sequence[0] == 0x1B &&
+            (event.raw_sequence[event.raw_length - 1] == 'u' ||
+                event.raw_sequence[event.raw_length - 1] == '~' ||
+                (event.raw_sequence[2] =='1' && event.raw_sequence[event.raw_length - 1] >= 'P' && event.raw_sequence[event.raw_length - 1] <= 'S')));
+
+        if (kitty_format) {
+            Key key = Key::None;
+            if (event.code < 0x20) {
+                switch (event.code) {
+                    case 0x01: 
+                    switch (event.raw_sequence[event.raw_length - 1]) {
+                    case 'P': key = Key::F1; break;
+                    case 'Q': key = Key::F2; break;
+                    case 'R': key = Key::F3; break;
+                    case 'S': key = Key::F4; break;
+                    default: key = Key::None; break;
+                    }; 
+                    break;
+                    case 0x09: key = Key::Tab; break;
+                    case 0x0D: key = event.raw_sequence[event.raw_length - 1] == '~' ? Key::Enter : Key::F3; break;
+                    case 0x1B: key = Key::Escape; break;
+                    case 0x0F: key = Key::F5; break;
+                    case 0x11: key = Key::F6; break;
+                    case 0x12: key = Key::F7; break;
+                    case 0x13: key = Key::F8; break;
+                    case 0x14: key = Key::F9; break;
+                    case 0x15: key = Key::F10; break;
+                    case 0x17: key = Key::F11; break;
+                    case 0x18: key = Key::F12; break;
+                    default: key = Key::None; break;
+                
+                }
+                
+            }
+            else if (event.code >= 0x20 && event.code < 0x80) {
+                key = static_cast<Key>(event.code);
+            } else if (event.code >= 0xE000 && event.code <= 0xE01F) {
+                key = static_cast<Key>(event.code);
+            } else if (event.code >= 0xE048 && event.code <= 0xE054) {
+                key = static_cast<Key>(event.code);
+            } else {
+                key = Key::None; // Неизвестный код
+            }
+            // Здесь можно сопоставить event.code с Key enum,
+            // в крайнем случае None
+            return {key, event.modifiers, event.is_release};
+        }
+            // 3. Обработка однобайтовых символов (TTY / Raw Mode)
+    int raw_code = event.code;
+    int mods = static_cast<int>(event.modifiers);
+    Key key = Key::None;
+
+    // --- ПРИОРИТЕТ 1: Специальные управляющие клавиши ---
+    switch (raw_code) {
+        case 0x09: return {Key::Tab, mods, false};       // Tab (Ctrl+I)
+        case 0x0D: return {Key::Enter, mods, false};     // Enter (Ctrl+M)
+        case 0x1B: return {Key::Escape, mods, false};    // Esc (Ctrl+[)
+        case 0x7F: return {Key::Delete, mods, false};    // Backspace (DEL)
     }
 
-    return {0x1B, 0, 1, false, "\x1b"}; // Просто Esc
+    // --- ПРИОРИТЕТ 2: Управляющие сsимволы Ctrl+A ... Ctrl+Z ---
+    // Диапазон 0x01 - 0x1A
+    if (raw_code >= 0x01 && raw_code <= 0x1A) {
+        mods = mods | (int)Modifier::Ctrl; // Принудительно ставим флаг Ctrl
+        // Превращаем код в букву: 0x01 -> 'A', 0x06 -> 'F' и т.д.
+        char letter = 'a' + (raw_code - 1);
+        
+        // Проверяем, есть ли такая буква в твоем enum (у тебя они начинаются с 0x41)
+        // В твоем enum Key::A = 0x61, Key::B = 0x62...
+        key = static_cast<Key>(letter); 
+        
+        return {key, mods, false};
+    }
+
+    // --- ПРИОРИТЕТ 3: Обычные печатные символы (ASCII 32-126) ---
+    if (raw_code >= 32 && raw_code <= 126) {
+        key = static_cast<Key>(raw_code);
+        return {key, mods, false};
+    }
+
+    return {Key::None, mods, false};
     }
 };
