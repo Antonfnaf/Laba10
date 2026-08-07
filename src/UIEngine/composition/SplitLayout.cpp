@@ -1,4 +1,5 @@
 #include "UIEngine/composition/SplitLayout.h"
+#include <cmath>
 
 
 std::vector<std::vector<Pixel>> SplitLayout::GetFrameLO(int width, int height, IWindow* active) const {

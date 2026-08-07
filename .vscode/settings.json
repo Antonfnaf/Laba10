@@ -1,0 +1,7 @@
+{
+    "cmake.buildTask": true,
+    "cmake.launchBehavior": "newTerminal",
+    "cmake.debugConfig": {
+        "console": "externalTerminal"
+    },
+}

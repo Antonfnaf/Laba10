@@ -5,8 +5,8 @@
 enum class Modifier : uint8_t {
     None = 0,
     Shift = 1 << 0,
-    Ctrl = 1 << 1,
-    Alt = 1 << 2,
+    Alt = 1 << 1,
+    Ctrl = 1 << 2,
     Meta = 1 << 3
 };
 // Определение побитового ИЛИ для Modifier

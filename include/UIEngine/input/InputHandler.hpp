@@ -7,7 +7,6 @@
 #include <poll.h>
 
 #include "Core/enums.h"
-#include "UIEngine/input/Bind.h"
 
 struct InputEvent {
     int code;       // Код клавиши if -2 see raw_sequence
@@ -85,6 +84,8 @@ public:
     }
 
     void CheckSupport() {
+        std::cout << "\x1b[>5u"; // Запрос поддержки Kitty Protocol 2
+        std::cout.flush();
         std::cout << "\x1b[?u"; // Запрос версии
         std::cout.flush();
 
@@ -95,21 +96,25 @@ public:
         if (poll(&pfd, 1, 100) > 0) {
             read(STDIN_FILENO, buf, sizeof(buf));
             // Ищем подстроку "?2u" или "?1u"
-            if (strstr(buf, "2u")) {
-                support_level = 2;
-                std::cout << "\x1b[>2u"; // Включаем явно, если поддержано
-                std::cout.flush();
+            int i = 0,num = 0;
+            bool found = false;
+
+            while (i < sizeof(buf) - 1 && buf[i] != '\0'){
+                if (found){
+                    if (buf[i] == 'u') break;
+                    if (buf[i] >= '0' && buf[i] <= '9') {
+                        num = num * 10 + (buf[i] - '0');
+                    }
+                    i++;
+                    continue;
+                }
+                i++;
+                if (buf[i] == '?') found = true;
             }
-            else if (strstr(buf, "1u")) {
-                support_level = 1;
-                std::cout << "\x1b[>1u"; // Включаем явно, если поддержано
-                std::cout.flush();
-            } else {
-                support_level = 0;
-            }
+            support_level = num; //0-31
         }
     }
-
+        
     int GetSupportLevel() const {
         return support_level;
     }
@@ -120,11 +125,11 @@ public:
         if (!kbhit()) {
             return {-1, 0, false, {0}, 0}; // No key pressed
         }
-
-        uint8_t first = getch();
-        if (first == -1) {
+        int code = getch();
+        if (code == -1) {
             return {-1, 0, false, {0}, 0}; // No key pressed
         }
+        uint8_t first = code;
         
         // 1. Обычный символ (не Escape)
         if (first != 0x1B) {
@@ -150,13 +155,14 @@ public:
                 seq[1] == '[' &&
                 (seq[seq_len - 1] == 'u' ||
                 seq[seq_len - 1] == '~' ||
-                (seq[2] =='1' && seq[seq_len - 1] >= 'P' && seq[seq_len - 1] <= 'S')));
+                (seq[2] =='1' && seq[seq_len - 1] >= 'P' && seq[seq_len - 1] <= 'S') ||
+                (seq[2] =='1' && seq[seq_len - 1] >= 'A' && seq[seq_len - 1] <= 'D')));
 
             if ( kitty_format) 
             {
                 // Парсим Kitty формат: "code;mods:type"
                 // Убираем возможные лишние символы если нужно
-                int code = 0, mods = 1;
+                int code = 0, mods = 0;
                 bool release = false;
                 
                 // Пример строки внутри seq: "97;5:3"
@@ -182,6 +188,9 @@ public:
                 
                 return {code, mods, release, seq, seq_len};
             } 
+            // Неизвестная последовательность
+            return {-2, 0, false, seq, seq_len}; // Нужно парсить отдельно
+            
             
             // Здесь случаи старых кодов (\x1b[A и т.д.)
             return {-2, 0, false, seq, seq_len}; // Старый код, нужно парсить отдельно
@@ -261,20 +270,29 @@ public:
             event.raw_sequence[0] == 0x1B &&
             (event.raw_sequence[event.raw_length - 1] == 'u' ||
                 event.raw_sequence[event.raw_length - 1] == '~' ||
-                (event.raw_sequence[2] =='1' && event.raw_sequence[event.raw_length - 1] >= 'P' && event.raw_sequence[event.raw_length - 1] <= 'S')));
+                (event.raw_sequence[2] =='1' &&
+                     event.raw_sequence[event.raw_length - 1] >= 'A' &&
+                      event.raw_sequence[event.raw_length - 1] <= 'S')
+            )
+            );
 
         if (kitty_format) {
             Key key = Key::None;
             if (event.code < 0x20) {
                 switch (event.code) {
-                    case 0x01: 
-                    switch (event.raw_sequence[event.raw_length - 1]) {
-                    case 'P': key = Key::F1; break;
-                    case 'Q': key = Key::F2; break;
-                    case 'R': key = Key::F3; break;
-                    case 'S': key = Key::F4; break;
-                    default: key = Key::None; break;
-                    }; 
+                    case 0x01: {
+                    uint8_t last = event.raw_sequence[event.raw_length - 1];
+                    if (last == 'A') {key = Key::UpArrow; break;}
+                    if (last == 'B') {key = Key::DownArrow; break;}
+                    if (last == 'C') {key = Key::RightArrow; break;}
+                    if (last == 'D') {key = Key::LeftArrow; break;}
+                    if (last == 'H') {key = Key::Home; break;}
+                    if (last == 'F') {key = Key::End; break;}
+                    if (last == 'P') {key = Key::F1; break;}
+                    if (last == 'Q') {key = Key::F2; break;}
+                    if (last == 'R') {key = Key::F3; break;}
+                    if (last == 'S') {key = Key::F4; break;}
+                    }
                     break;
                     case 0x09: key = Key::Tab; break;
                     case 0x0D: key = event.raw_sequence[event.raw_length - 1] == '~' ? Key::Enter : Key::F3; break;
@@ -313,6 +331,7 @@ public:
     // --- ПРИОРИТЕТ 1: Специальные управляющие клавиши ---
     switch (raw_code) {
         case 0x09: return {Key::Tab, mods, false};       // Tab (Ctrl+I)
+        case 0x0A: return {Key::Enter, mods, false};     // Enter (Ctrl+M)        
         case 0x0D: return {Key::Enter, mods, false};     // Enter (Ctrl+M)
         case 0x1B: return {Key::Escape, mods, false};    // Esc (Ctrl+[)
         case 0x7F: return {Key::Delete, mods, false};    // Backspace (DEL)

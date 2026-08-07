@@ -1,18 +1,14 @@
 #pragma once
-#include <string>
 #include <functional>
 #include <map>
-#include <vector>
-#include <queue>
-#include <mutex>
-#include <atomic>
-#include <thread>
+
 /*
 #include <conio.h>*/
 
 
 #include "Core/enums.h"
 #include "UIEngine/input//Bind.h"
+#include "UIEngine/input/InputHandler.hpp"
 //#include "Core/Pixel.h"
 
 
@@ -20,12 +16,14 @@ struct InputManager
 {
     
 private:
+
+    static InputHandler handler;
     static Bind actions;
     static KeyCode getKeyCode();
 
 public:
     /////////////
-    static void Init();      // Запускает поток ввода
+    static void Init();      // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
     static void Shutdown();
     /////////////
     /*inline static bool hasKey() {

@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #include "Core/Pixel.h"
 #include "Core/Utils.h"
