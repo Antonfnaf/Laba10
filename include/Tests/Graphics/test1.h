@@ -8,6 +8,7 @@
 #include "UIEngine/input/InputManager.h"
 
 #include "UI/windows/WButtonList.h"
+#include "UI/windows/WKeyMonitor.h"
 
 
 
@@ -122,6 +123,7 @@ public:
 	static void StartTest(int time) {
 		WindowManager::Init();
 		bool WindowChoise = false;
+		WindowManager::AddWindow("Key monitor", std::make_unique<WKeyMonitor>());
 		WindowManager::AddWindow("1", std::make_unique<TestWindow1>());
 		WindowManager::AddWindow("2", std::make_unique<TestWindow2>());
 		WindowManager::AddWindow("3", std::make_unique<TestMainWindow>());
@@ -151,6 +153,11 @@ public:
 					Button("Open window 3", [&]() {
 						WindowManager::Screen_ChangeFocus(1);
 						WindowManager::OpenWindow("3");
+						WindowManager::Screen_ChangeFocus(-1);
+					}),
+					Button("Open key monitor", [&]() {
+						WindowManager::Screen_ChangeFocus(1);
+						WindowManager::OpenWindow("Key monitor");
 						WindowManager::Screen_ChangeFocus(-1);
 					}),
 					Button(),
@@ -189,9 +196,10 @@ public:
 				WindowManager::OpenWindow("3");
 				WindowManager::Screen_ChangeFocus(-1);
 					}),
-		}
+				}
 			)
 		);
+		
 
 		WindowManager::SetDefaultBinds({ {KeyCode::Escape,[&]() {time = 0; }} });
 		//std::unique_ptr buttonList1 =
@@ -202,7 +210,7 @@ public:
 		{
 			
 			WindowManager::AddBinds({
-				{KeyCode::Digit1, [&]() {WindowManager::OpenWindow("1"); WindowChoise = false; }},
+				{KeyCode::Digit1, [&]() {WindowManager::OpenWindow("Key monitor"); WindowChoise = false; }},
 				{KeyCode::Digit2, [&]() {WindowManager::OpenWindow("2"); WindowChoise = false; }},
 				{KeyCode::Digit3, [&]() {WindowManager::OpenWindow("3"); WindowChoise = false; }},
 				{KeyCode::Digit4, [&]() {WindowManager::OpenWindow("4"); WindowChoise = false; }},

@@ -109,13 +109,15 @@ ILayout* ScreenLayout::FindLayoutByDirection(Direction dir) const {
 	return FindLayoutByDirection(active, dir);
 }
 
-void ScreenLayout::SetFocusPane(ILayout* pane) {
+bool ScreenLayout::SetFocusPane(ILayout* pane) {
+	if (!pane) return false;
 	active = pane;
+	return true;
 }
-void ScreenLayout::ChangeFocus(int num) {
-	if (!root.get()) return;
+bool ScreenLayout::ChangeFocus(int num) {
+	if (!root.get()) return false;
 	std::vector<ILayout*> paneList = root->GetPaneList();
-	if (paneList.empty()) return;
+	if (paneList.empty()) return false;
 	int index = 0;
 	for (int i = 0; i < paneList.size();i++) 
 		if (paneList[i] == active)
@@ -123,12 +125,13 @@ void ScreenLayout::ChangeFocus(int num) {
 	
 	int newIndex = (index + num) % (int)paneList.size();
 	if (newIndex < 0) newIndex += paneList.size();
-	SetFocusPane(paneList[newIndex]);
+	return SetFocusPane(paneList[newIndex]);
 }
-void ScreenLayout::ChangeFocus(Direction dir) {
+bool ScreenLayout::ChangeFocus(Direction dir) {
 	ILayout* newActive = FindLayoutByDirection(dir);
-	if (!newActive) return;
+	if (!newActive) return false;
 	SetFocusPane(newActive);
+	return true;
 }
 
 void ScreenLayout::FocusNext() {

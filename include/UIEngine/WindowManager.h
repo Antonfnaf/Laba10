@@ -28,10 +28,26 @@ public:
 				{KeyCode::AltDownArrow, [&]() {Screen_SwapLayouts(Direction::Down); }},
 				{KeyCode::AltUpArrow, [&]() {Screen_SwapLayouts(Direction::Up); }},
 				{KeyCode::AltRightArrow, [&]() {Screen_SwapLayouts(Direction::Right); }},
-				{KeyCode::CtrlLeftArrow, [&]() {Screen_ChangeFocus(Direction::Left); }},
-				{KeyCode::CtrlDownArrow, [&]() {Screen_ChangeFocus(Direction::Down); }},
-				{KeyCode::CtrlUpArrow, [&]() {Screen_ChangeFocus(Direction::Up); }},
-				{KeyCode::CtrlRightArrow, [&]() {Screen_ChangeFocus(Direction::Right); }},
+				{KeyCode::CtrlLeftArrow, [&]() {
+					if(!Screen_ChangeFocus(Direction::Left)) 
+					if(!Screen_ChangeFocus(Direction::Right)) 
+					Screen_FocusNext(); 
+				}},
+				{KeyCode::CtrlDownArrow, [&]() {
+					if(!Screen_ChangeFocus(Direction::Down)) 
+					if(!Screen_ChangeFocus(Direction::Up)) 
+					Screen_FocusNext(); 
+				}},
+				{KeyCode::CtrlUpArrow, [&]() {
+					if(!Screen_ChangeFocus(Direction::Up)) 
+					if(!Screen_ChangeFocus(Direction::Down)) 
+					Screen_FocusPrev(); 
+				}},
+				{KeyCode::CtrlRightArrow, [&]() {
+					if(!Screen_ChangeFocus(Direction::Right)) 
+					if(!Screen_ChangeFocus(Direction::Left)) 
+					Screen_FocusPrev(); 
+				}},
 				{KeyCode::CtrlA, [&]() {Screen_SplitActive(new NullWindow(),false); }},
 				{KeyCode::CtrlX, [&]() {Screen_SplitActive(new NullWindow(),true); }},
 				{KeyCode::CtrlD, [&]() {Screen_DeleteActive(); }},
@@ -64,11 +80,11 @@ public:
 	//Дает соседний активному лейаут в заданном направлении
 	static ILayout* Screen_FindLayoutByDirection(Direction dir) { return screen.FindLayoutByDirection(dir); }
 	//изменение фокуса на определенную панель
-	static void Screen_SetFocusPane(ILayout* pane) { screen.SetFocusPane(pane); }
+	static bool Screen_SetFocusPane(ILayout* pane) { return screen.SetFocusPane(pane); }
 	//изменение фокуса на определенное количество панелей
-	static void Screen_ChangeFocus(int num) { screen.ChangeFocus(num); }
+	static bool Screen_ChangeFocus(int num) { return screen.ChangeFocus(num); }
 	//изменение фокуса на определенному направлению
-	static void Screen_ChangeFocus(Direction dir) { screen.ChangeFocus(dir); }
+	static bool Screen_ChangeFocus(Direction dir) { return screen.ChangeFocus(dir); }
 	//Изменение фокуса на следующую панель
 	static void Screen_FocusNext() { Screen_ChangeFocus(1); }
 	//Изменение фокуса на предыдущую панель

@@ -27,15 +27,15 @@ private:
     int support_level = 0;
 
 
-    int parse_to_int(std::string str) {
-        int res = 0;
-        int i = 0;
-        while (i < str.length() && (int)str[i] >= 0x30 && (int)str[i] < 0x3A ) {
-            res*=10;
-            res+=(int)str[i++]-48;
-        }
-        return i < str.length() ? -1 : res;
-    }
+    // int parse_to_int(std::string str) {
+    //     int res = 0;
+    //     int i = 0;
+    //     while (i < str.length() && (int)str[i] >= 0x30 && (int)str[i] < 0x3A ) {
+    //         res*=10;
+    //         res+=(int)str[i++]-48;
+    //     }
+    //     return i < str.length() ? -1 : res;
+    // }
 public:
     InputHandler() {
         // Save the terminal settings
@@ -84,7 +84,7 @@ public:
     }
 
     void CheckSupport() {
-        std::cout << "\x1b[>5u"; // Запрос поддержки Kitty Protocol 2
+        std::cout << "\x1b[>13u"; // Запрос поддержки Kitty Protocol 2
         std::cout.flush();
         std::cout << "\x1b[?u"; // Запрос версии
         std::cout.flush();
@@ -171,6 +171,17 @@ public:
                     code = code * 10 + (seq[i] - '0');
                     i++; // Читаем код клавиши
                 }
+                if (i < seq_len && seq[i] == ':') {
+                    int number = 0;
+                    i++;
+                    while (i< seq_len && (seq[i] >= '0' && seq[i] <= '9')) {
+                        number = number * 10 + (seq[i] - '0');
+                        i++; // Читаем модификаторы
+                    }
+                    if (number == 3){
+                        release = true; // 3 означает отпускание клавиши
+                    }; 
+                }
                 if (i < seq_len && seq[i] == ';') {
                     i++;
                     while (i< seq_len && (seq[i] >= '0' && seq[i] <= '9')) {
@@ -211,7 +222,7 @@ public:
     
     KeyEvent GetKeyEvent(InputEvent event) {
         if (event.code == -1) {
-            return {Key::None, event.modifiers, event.is_release}; // No key pressed
+            return {Key::None, event.modifiers-1, event.is_release}; // No key pressed
         }
         if (event.code == -2) {
             // Обработка старых кодов
@@ -223,7 +234,7 @@ public:
             // Но в linux terminfo некоторые коды начинаются с \x1b[[ (две скобки)
             
             Key key = Key::None;
-            int mods = event.modifiers; // В legacy режиме модификаторы часто уже "вшиты" в код или отсутствуют
+            int mods = event.modifiers - 1; // В legacy режиме модификаторы часто уже "вшиты" в код или отсутствуют
             
             // Навигация
             if (seq == "\x1b[A") key = Key::UpArrow;
@@ -251,6 +262,10 @@ public:
             else if (seq == "\x1bOQ") key = Key::F2;
             else if (seq == "\x1bOR") key = Key::F3;
             else if (seq == "\x1bOS") key = Key::F4;
+            else if (seq == "\x1b[P") key = Key::F1;
+            else if (seq == "\x1b[Q") key = Key::F2;
+            else if (seq == "\x1b[R") key = Key::F3;
+            else if (seq == "\x1b[S") key = Key::F4;
             else if (seq == "\x1b[15~") key = Key::F5;
             else if (seq == "\x1b[17~") key = Key::F6;
             else if (seq == "\x1b[18~") key = Key::F7;
@@ -295,7 +310,7 @@ public:
                     }
                     break;
                     case 0x09: key = Key::Tab; break;
-                    case 0x0D: key = event.raw_sequence[event.raw_length - 1] == '~' ? Key::Enter : Key::F3; break;
+                    case 0x0D: key = event.raw_sequence[event.raw_length - 1] == '~' ? Key::F3 : Key::Enter; break;
                     case 0x1B: key = Key::Escape; break;
                     case 0x0F: key = Key::F5; break;
                     case 0x11: key = Key::F6; break;
@@ -321,11 +336,11 @@ public:
             }
             // Здесь можно сопоставить event.code с Key enum,
             // в крайнем случае None
-            return {key, event.modifiers, event.is_release};
+            return {key, event.modifiers-1, event.is_release};
         }
             // 3. Обработка однобайтовых символов (TTY / Raw Mode)
     int raw_code = event.code;
-    int mods = static_cast<int>(event.modifiers);
+    int mods = static_cast<int>(event.modifiers -1);
     Key key = Key::None;
 
     // --- ПРИОРИТЕТ 1: Специальные управляющие клавиши ---
@@ -348,15 +363,15 @@ public:
         // В твоем enum Key::A = 0x61, Key::B = 0x62...
         key = static_cast<Key>(letter); 
         
-        return {key, mods, false};
+        return {key, mods - 1, false};
     }
 
     // --- ПРИОРИТЕТ 3: Обычные печатные символы (ASCII 32-126) ---
     if (raw_code >= 32 && raw_code <= 126) {
         key = static_cast<Key>(raw_code);
-        return {key, mods, false};
+        return {key, mods - 1, false};
     }
 
-    return {Key::None, mods, false};
+    return {Key::None, mods - 1, false};
     }
 };

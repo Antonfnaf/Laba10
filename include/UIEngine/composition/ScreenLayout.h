@@ -81,11 +81,11 @@ public:
 	};
 
 	//изменение фокуса на определенную панель
-	void SetFocusPane(ILayout* pane);
+	bool SetFocusPane(ILayout* pane);
 	//изменение фокуса на определенное количество панелей
-	void ChangeFocus(int num);
+	bool ChangeFocus(int num);
 	//изменение фокуса на определенному направлению
-	void ChangeFocus(Direction dir);
+	bool ChangeFocus(Direction dir);
 	//Изменение фокуса на следующую панель
 	void FocusNext();
 	//Изменение фокуса на предыдущую панель

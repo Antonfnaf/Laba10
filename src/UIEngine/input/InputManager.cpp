@@ -8,13 +8,15 @@
 #endif
 
 
-
+KeyCode InputManager::lastKeyCode;
+KeyEvent InputManager::lastKeyEvent = { Key::None, 0, 0 };
+InputEvent InputManager::lastRawEvent = {  0 , 0 };
 Bind InputManager::actions;
 InputHandler InputManager::handler;
 
 
 
-KeyCode InputManager::getKeyCode() {
+KeyCode InputManager::GetNewKeyCode() {
 #ifdef _WIN32
     // ============================================================
     // 1. ������� ��������� ������������ (�� ������ _getch!)
@@ -218,16 +220,18 @@ KeyCode InputManager::getKeyCode() {
 // ============================================================
     
     InputEvent rawEvent = handler.GetInputEvent();
+    lastRawEvent = rawEvent; // Сохраняем последнее необработанное событие
     if (rawEvent.code == -1) {
         return KeyCode::None;
     }
 
     KeyEvent keyEvent = handler.GetKeyEvent(rawEvent);
+    lastKeyEvent = keyEvent; // Сохраняем последнее событие клавиши
     if (keyEvent.key == Key::None) {
         return KeyCode::None;
     }
 
-    uint8_t mods = static_cast<uint8_t>(keyEvent.modifiers-1);
+    uint8_t mods = static_cast<uint8_t>(keyEvent.modifiers);
     Key k = keyEvent.key;
 
     // --- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ БАЗОВОГО МАППИНГА ---
@@ -437,8 +441,8 @@ void InputManager::ClearBinds() {
 
 
 void InputManager::Do() {
-    KeyCode key = getKeyCode();
-    if (actions.contains(key)) {
-        actions[key]();
+    Update();
+    if (actions.contains(lastKeyCode)) {
+        actions[lastKeyCode]();
     }
 }

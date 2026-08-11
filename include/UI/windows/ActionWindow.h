@@ -1,22 +1,22 @@
-#pragma once
-#include <iostream>
+// #pragma once
+// #include <iostream>
 
-#include "Core/enums.h"
+// #include "Core/enums.h"
 
-#include "UI/windows/IActionWindow.h"
+// #include "UIEngine/composition/IWindow.h"
 
 
-class ActionWindow : public IActionWindow
-{
-private:
+// class ActionWindow 
+// {
+// private:
 
-public:
+// public:
 
-};
+// };
 
-class NullWindow : public IWindow
-{
-	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const override {
-		return std::vector<std::vector<Pixel>>(height, std::vector<Pixel>(width));
-	}
-};
+// class NullWindow : public IWindow
+// {
+// 	std::vector<std::vector<Pixel>> GetFrameLO(int width, int height) const override {
+// 		return std::vector<std::vector<Pixel>>(height, std::vector<Pixel>(width));
+// 	}
+// };
