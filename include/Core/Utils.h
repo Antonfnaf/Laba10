@@ -3,7 +3,6 @@
 #include <cstdlib> 
 #include <vector>
 #include <string>
-#include <optional>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -51,6 +50,7 @@ struct ConsoleTools
             return w.ws_col;
         }
 #endif
+        return 0; // Возвращаем 0, если не удалось получить размер консоли
     }
     static int GetConsoleHeight() {
 #ifdef _WIN32
@@ -66,7 +66,8 @@ struct ConsoleTools
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
         return w.ws_row;
     }
-    #endif
+#endif
+        return 0; // Возвращаем 0, если не удалось получить размер консоли
     }
 };
 
@@ -102,7 +103,7 @@ struct TestTools {
         std::cout << std::flush;
         if (pause)
         {
-            std::cin;
+            std::cin.get();
         }
     }
 };

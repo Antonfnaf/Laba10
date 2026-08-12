@@ -1,5 +1,4 @@
-﻿#pragma once
-#include <iostream>
+﻿#include <iostream>
 #include <optional>
 //#include <list>
 //#include "Base/enums.h"

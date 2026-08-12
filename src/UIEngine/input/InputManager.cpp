@@ -4,7 +4,7 @@
 #include <conio.h>
 #include <windows.h>
 #else
-#include "UIEngine/input/InputHandler.hpp"
+#include "UIEngine/input/InputHandler.h"
 #endif
 
 
@@ -242,7 +242,7 @@ KeyCode InputManager::GetNewKeyCode() {
             case Key::Tab: return KeyCode::Tab;
             case Key::Enter: return KeyCode::Enter;
             case Key::Escape: return KeyCode::Escape;
-            case Key::Delete: return KeyCode::Delete; // ASCII DEL
+            case Key::Backspace: return KeyCode::Delete; // ASCII DEL
             
             // Буквы (в Key они строчные по значению, но мы маппим на строчные KeyCode)
             case Key::A: return KeyCode::a; case Key::B: return KeyCode::b;
@@ -310,7 +310,7 @@ KeyCode InputManager::GetNewKeyCode() {
             case Key::PgUp: return KeyCode::PgUp;
             case Key::PgDn: return KeyCode::PgDn;
             case Key::Insert: return KeyCode::Insert;
-            case Key::DeleteKey: return KeyCode::DeleteKey;
+            case Key::Delete: return KeyCode::DeleteKey;
 
             // F-клавиши
             case Key::F1: return KeyCode::F1; case Key::F2: return KeyCode::F2;
@@ -351,7 +351,7 @@ KeyCode InputManager::GetNewKeyCode() {
             case Key::PgUp: return KeyCode::CtrlPgUp;
             case Key::PgDn: return KeyCode::CtrlPgDn;
             case Key::Insert: return KeyCode::CtrlInsert;
-            case Key::DeleteKey: return KeyCode::CtrlDelete;
+            case Key::Delete: return KeyCode::CtrlDelete;
             case Key::F1: return KeyCode::CtrlF1; case Key::F2: return KeyCode::CtrlF2;
             case Key::F3: return KeyCode::CtrlF3; case Key::F4: return KeyCode::CtrlF4;
             case Key::F5: return KeyCode::CtrlF5; case Key::F6: return KeyCode::CtrlF6;
@@ -380,7 +380,7 @@ KeyCode InputManager::GetNewKeyCode() {
             case Key::PgUp: return KeyCode::ShiftPgUp;
             case Key::PgDn: return KeyCode::ShiftPgDn;
             case Key::Insert: return KeyCode::ShiftInsert;
-            case Key::DeleteKey: return KeyCode::ShiftDelete;
+            case Key::Delete: return KeyCode::ShiftDelete;
             case Key::F1: return KeyCode::ShiftF1; case Key::F2: return KeyCode::ShiftF2;
             case Key::F3: return KeyCode::ShiftF3; case Key::F4: return KeyCode::ShiftF4;
             case Key::F5: return KeyCode::ShiftF5; case Key::F6: return KeyCode::ShiftF6;

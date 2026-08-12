@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <cstdint>
-#include <unordered_map>
 
 enum class Modifier : uint8_t {
     None = 0,
@@ -24,7 +23,10 @@ inline Modifier operator&(Modifier a, Modifier b) {
 }
 
 enum class Key : uint16_t {
-    None = 0,
+    None = 0, // специальное значение для отсутствия клавиши
+    Tab = 0x09,
+    Enter = 0x0D,
+    Escape = 0x1B,
     Space = 0x20, Exclamation = 0x21, DoubleQuote = 0x22, Hash = 0x23,
     Dollar = 0x24, Percent = 0x25, Ampersand = 0x26, SingleQuote = 0x27,
     LeftParen = 0x28, RightParen = 0x29, Asterisk = 0x2A, Plus = 0x2B,
@@ -39,22 +41,48 @@ enum class Key : uint16_t {
     G = 0x67, H = 0x68, I = 0x69, J = 0x6A, K = 0x6B, L = 0x6C, M = 0x6D,
     N = 0x6E, O = 0x6F, P = 0x70, Q = 0x71, R = 0x72, S = 0x73, 
     T = 0x74, U = 0x75, V = 0x76, W = 0x77, X = 0x78, Y = 0x79, Z = 0x7A,
-    LeftBrace = 0x7B, Pipe = 0x7C, RightBrace = 0x7D, Tilde = 0x7E, Delete = 0x7F,
-    Tab = 0x09,
-    Escape = 0x1B,
-    Enter = 0x0D,
-    UpArrow = 0xE048,
-    DownArrow = 0xE049,
-    LeftArrow = 0xE04B,
-    RightArrow = 0xE04D,
-    Home = 0xE04F,
-    End = 0xE050,
-    PgUp = 0xE051,
-    PgDn = 0xE052,
-    Insert = 0xE053,
-    DeleteKey = 0xE054,
+    LeftBrace = 0x7B, Pipe = 0x7C, RightBrace = 0x7D, Tilde = 0x7E, Backspace = 0x7F,
     F1 = 0xE014,    F2 = 0xE015,    F3 = 0xE016,    F4 = 0xE017,    F5 = 0xE018,    F6 = 0xE019,
-    F7 = 0xE01A,    F8 = 0xE01B,    F9 = 0xE01C,    F10 = 0xE01D,    F11 = 0xE01E,    F12 = 0xE01F
+    F7 = 0xE01A,    F8 = 0xE01B,    F9 = 0xE01C,    F10 = 0xE01D,    F11 = 0xE01E,    F12 = 0xE01F,
+
+    Numpad = 0xE010, // Базовый код для NumPad (для удобства)
+
+    NP0 = 0xE037,    NP1 = 0xE038,    NP2 = 0xE039,    NP3 = 0xE03A,    NP4 = 0xE03B,
+    NP5 = 0xE03C,    NP6 = 0xE03D,    NP7 = 0xE03E,    NP8 = 0xE03F,    NP9 = 0xE040,
+    NPDot = 0xE041,    
+    NPSlash = 0xE042,    
+    NPAsterisk = 0xE043,    
+    NPMinus = 0xE044,    
+    NPPlus = 0xE045,    
+    NPEnter = 0xE046,
+
+    NPLeftArrow = 0xE049,
+    NPRightArrow = 0xE04A,
+    NPUpArrow = 0xE04B,
+    NPDownArrow = 0xE04C,
+    NPPgUp = 0xE04D,
+    NPPgDn = 0xE04E,
+    NPHome = 0xE04F,
+    NPEnd = 0xE050,
+    NPInsert = 0xE051,
+    NPDeleteKey = 0xE052,
+
+    Shift = 0xE061, // Базовый код для Shift 
+    Ctrl = 0xE062,  // Базовый код для Ctrl 
+    Alt = 0xE063,   // Базовый код для Alt 
+    Meta = 0xE064,  // Базовый код для Meta 
+
+    LeftArrow = 0xF000,
+    RightArrow = 0xF001,
+    UpArrow = 0xF002,
+    DownArrow = 0xF003,
+    PgUp = 0xF004,
+    PgDn = 0xF005,
+    Home = 0xF006,
+    End = 0xF007,
+    Insert = 0xF008,
+    Delete = 0xF009,
+    UnKnown = 0xFFFF// специальное значение для неизвестной клавиши
 };
 
 enum class KeyCode : uint16_t

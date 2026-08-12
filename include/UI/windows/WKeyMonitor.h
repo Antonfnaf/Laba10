@@ -11,7 +11,17 @@
 #include "UIEngine/input/InputManager.h"
 // Маппинг для Key (используется в InputHandler)
 const std::unordered_map<Key, std::string> KeyToString = {
+    // Специальные
     {Key::None, "None"},
+    {Key::UnKnown, "Unknown"},
+    
+    // Управляющие
+    {Key::Tab, "Tab"},
+    {Key::Enter, "Enter"},
+    {Key::Escape, "Esc"},
+    {Key::Backspace, "Backspace"}, // 0x7F
+    
+    // ASCII Печатные символы
     {Key::Space, "Space"}, {Key::Exclamation, "!"}, {Key::DoubleQuote, "\""}, {Key::Hash, "#"},
     {Key::Dollar, "$"}, {Key::Percent, "%"}, {Key::Ampersand, "&"}, {Key::SingleQuote, "'"},
     {Key::LeftParen, "("}, {Key::RightParen, ")"}, {Key::Asterisk, "*"}, {Key::Plus, "+"},
@@ -26,14 +36,32 @@ const std::unordered_map<Key, std::string> KeyToString = {
     {Key::G, "g"}, {Key::H, "h"}, {Key::I, "i"}, {Key::J, "j"}, {Key::K, "k"}, {Key::L, "l"}, {Key::M, "m"},
     {Key::N, "n"}, {Key::O, "o"}, {Key::P, "p"}, {Key::Q, "q"}, {Key::R, "r"}, {Key::S, "s"}, 
     {Key::T, "t"}, {Key::U, "u"}, {Key::V, "v"}, {Key::W, "w"}, {Key::X, "x"}, {Key::Y, "y"}, {Key::Z, "z"},
-    {Key::LeftBrace, "{"}, {Key::Pipe, "|"}, {Key::RightBrace, "}"}, {Key::Tilde, "~"}, 
-    {Key::Delete, "Backspace"},
-    {Key::Tab, "Tab"}, {Key::Escape, "Esc"}, {Key::Enter, "Enter"},
-    {Key::UpArrow, "Up"}, {Key::DownArrow, "Down"}, {Key::LeftArrow, "Left"}, {Key::RightArrow, "Right"},
-    {Key::Home, "Home"}, {Key::End, "End"}, {Key::PgUp, "PgUp"}, {Key::PgDn, "PgDn"},
-    {Key::Insert, "Ins"}, {Key::DeleteKey, "Del"},
-    {Key::F1, "F1"}, {Key::F2, "F2"}, {Key::F3, "F3"}, {Key::F4, "F4"}, {Key::F5, "F5"}, {Key::F6, "F6"},
-    {Key::F7, "F7"}, {Key::F8, "F8"}, {Key::F9, "F9"}, {Key::F10, "F10"}, {Key::F11, "F11"}, {Key::F12, "F12"}
+    {Key::LeftBrace, "{"}, {Key::Pipe, "|"}, {Key::RightBrace, "}"}, {Key::Tilde, "~"},
+
+    // Функциональные клавиши
+    {Key::F1, "F1"}, {Key::F2, "F2"}, {Key::F3, "F3"}, {Key::F4, "F4"}, 
+    {Key::F5, "F5"}, {Key::F6, "F6"}, {Key::F7, "F7"}, {Key::F8, "F8"}, 
+    {Key::F9, "F9"}, {Key::F10, "F10"}, {Key::F11, "F11"}, {Key::F12, "F12"},
+
+    // Numpad
+    {Key::Numpad, "NumPad"},
+    {Key::NP0, "NP0"}, {Key::NP1, "NP1"}, {Key::NP2, "NP2"}, {Key::NP3, "NP3"}, {Key::NP4, "NP4"},
+    {Key::NP5, "NP5"}, {Key::NP6, "NP6"}, {Key::NP7, "NP7"}, {Key::NP8, "NP8"}, {Key::NP9, "NP9"},
+    {Key::NPDot, "NP."}, {Key::NPSlash, "NP/"}, {Key::NPAsterisk, "NP*"}, 
+    {Key::NPMinus, "NP-"}, {Key::NPPlus, "NP+"}, {Key::NPEnter, "NPEnter"},
+    {Key::NPLeftArrow, "NPLeft"}, {Key::NPRightArrow, "NPRight"}, 
+    {Key::NPUpArrow, "NPUp"}, {Key::NPDownArrow, "NPDown"},
+    {Key::NPPgUp, "NPPgUp"}, {Key::NPPgDn, "NPPgDn"},
+    {Key::NPHome, "NPHome"}, {Key::NPEnd, "NPEnd"},
+    {Key::NPInsert, "NPIns"}, {Key::NPDeleteKey, "NPDel"},
+
+    {Key::Shift, "Shift"}, {Key::Ctrl, "Ctrl"}, {Key::Alt, "Alt"}, {Key::Meta, "Meta"},
+    // Навигация (новый диапазон 0xF000+)
+    {Key::LeftArrow, "Left"}, {Key::RightArrow, "Right"}, 
+    {Key::UpArrow, "Up"}, {Key::DownArrow, "Down"},
+    {Key::PgUp, "PgUp"}, {Key::PgDn, "PgDn"},
+    {Key::Home, "Home"}, {Key::End, "End"},
+    {Key::Insert, "Ins"}, {Key::Delete, "Del"}
 };
 
 // Маппинг для KeyCode (более подробный, включая Ctrl/Alt модификации)
@@ -141,8 +169,10 @@ class WKeyMonitor : public IWindow {
         std::vector<std::vector<Pixel>> pic;
         
         std::string modsStr = std::to_string(InputManager::GetLastKeyEvent().modifiers);
-        std::string keyStr = KeyToString.at(InputManager::GetLastKeyEvent().key);
-        std::string keyCodeStr = KeyCodeToString.at(InputManager::GetLastKeyCode());
+        auto it = KeyToString.find(InputManager::GetLastKeyEvent().key);
+        std::string keyStr = (it != KeyToString.end()) ? it->second : "Unknown";
+        auto keyCodeIt = KeyCodeToString.find(InputManager::GetLastKeyCode());
+        std::string keyCodeStr = (keyCodeIt != KeyCodeToString.end()) ? keyCodeIt->second : "Unknown";
         std::string rawStr = bytes_to_hex_string(InputManager::GetLastRawEvent().raw_sequence, InputManager::GetLastRawEvent().raw_length);
         std::string fullStr = modsStr + " Key: " + keyStr + " | KeyCode: " + keyCodeStr + " | Raw: " + rawStr;
         if(!rawStr.empty()) {
